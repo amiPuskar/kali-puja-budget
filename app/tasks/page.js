@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, CheckSquare, User, Calendar, AlertCircle } from 'lucide-react';
 import useStore from '@/store/useStore';
 import { subscribeToCollection, addDocument, updateDocument, deleteDocument } from '@/lib/firebase';
+import toast from 'react-hot-toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import PageHeader from '@/components/PageHeader';
 
@@ -40,12 +41,15 @@ export default function Tasks() {
       
       if (editingTask) {
         await updateDocument(COLLECTIONS.TASKS, editingTask.id, taskData);
+        toast.success('Task updated');
       } else {
         await addDocument(COLLECTIONS.TASKS, taskData);
+        toast.success('Task added');
       }
       resetForm();
     } catch (error) {
       console.error('Error saving task:', error);
+      toast.error('Failed to save task');
     }
   };
 

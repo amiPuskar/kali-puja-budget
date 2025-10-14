@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, User, DollarSign } from 'lucide-react';
+import { Plus, Edit2, Trash2, User, DollarSign, X } from 'lucide-react';
 import useStore from '@/store/useStore';
 import { subscribeToCollection, addDocument, updateDocument, deleteDocument } from '@/lib/firebase';
+import toast from 'react-hot-toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import PageHeader from '@/components/PageHeader';
 
@@ -34,12 +35,15 @@ export default function Members() {
       
       if (editingMember) {
         await updateDocument(COLLECTIONS.MEMBERS, editingMember.id, memberData);
+        toast.success('Member updated');
       } else {
         await addDocument(COLLECTIONS.MEMBERS, memberData);
+        toast.success('Member added');
       }
       resetForm();
     } catch (error) {
       console.error('Error saving member:', error);
+      toast.error('Failed to save member');
     }
   };
 
@@ -180,6 +184,14 @@ export default function Members() {
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-10 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3">
+              <button
+                type="button"
+                onClick={resetForm}
+                className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 {editingMember ? 'Edit Member' : 'Add New Member'}
               </h3>

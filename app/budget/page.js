@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, DollarSign, Target, TrendingUp } from 'lucide-react';
 import useStore from '@/store/useStore';
 import { subscribeToCollection, addDocument, updateDocument, deleteDocument } from '@/lib/firebase';
+import toast from 'react-hot-toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import PageHeader from '@/components/PageHeader';
 
@@ -33,12 +34,15 @@ export default function Budget() {
       
       if (editingItem) {
         await updateDocument(COLLECTIONS.BUDGET, editingItem.id, budgetData);
+        toast.success('Budget item updated');
       } else {
         await addDocument(COLLECTIONS.BUDGET, budgetData);
+        toast.success('Budget item added');
       }
       resetForm();
     } catch (error) {
       console.error('Error saving budget item:', error);
+      toast.error('Failed to save budget item');
     }
   };
 
