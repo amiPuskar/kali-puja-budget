@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Receipt, Calendar, Tag, X } from 'lucide-react';
 import useStore from '@/store/useStore';
 import { subscribeToCollection, addDocument, updateDocument, deleteDocument } from '@/lib/firebase';
-import toast from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import PageHeader from '@/components/PageHeader';
 
@@ -40,12 +40,18 @@ export default function Expenses() {
       
       if (editingExpense) {
         await updateDocument(COLLECTIONS.EXPENSES, editingExpense.id, expenseData);
+        setEditingExpense(null);
+        setIsModalOpen(false);
+        setFormData({ description: '', amount: '', category: '', date: new Date().toISOString().split('T')[0], notes: '' });
         toast.success('Expense updated');
       } else {
         await addDocument(COLLECTIONS.EXPENSES, expenseData);
+        setEditingExpense(null);
+        setIsModalOpen(false);
+        setFormData({ description: '', amount: '', category: '', date: new Date().toISOString().split('T')[0], notes: '' });
         toast.success('Expense added');
       }
-      resetForm();
+      // resetForm();
     } catch (error) {
       console.error('Error saving expense:', error);
       toast.error('Failed to save expense');

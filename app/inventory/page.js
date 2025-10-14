@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Package, CheckCircle, Clock, ShoppingCart } from 'lucide-react';
 import useStore from '@/store/useStore';
 import { subscribeToCollection, addDocument, updateDocument, deleteDocument } from '@/lib/firebase';
-import toast from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import PageHeader from '@/components/PageHeader';
 

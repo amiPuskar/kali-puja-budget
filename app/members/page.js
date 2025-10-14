@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, User, DollarSign, X } from 'lucide-react';
 import useStore from '@/store/useStore';
 import { subscribeToCollection, addDocument, updateDocument, deleteDocument } from '@/lib/firebase';
-import toast from 'react-hot-toast';
+import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import PageHeader from '@/components/PageHeader';
 
@@ -35,12 +35,21 @@ export default function Members() {
       
       if (editingMember) {
         await updateDocument(COLLECTIONS.MEMBERS, editingMember.id, memberData);
+        // close and clear after success
+        setEditingMember(null);
+        setIsModalOpen(false);
+        setFormData({ name: '', role: '', contribution: '', contact: '', email: '' });
         toast.success('Member updated');
       } else {
         await addDocument(COLLECTIONS.MEMBERS, memberData);
+        // close and clear after success
+        setEditingMember(null);
+        setIsModalOpen(false);
+        setFormData({ name: '', role: '', contribution: '', contact: '', email: '' });
         toast.success('Member added');
       }
-      resetForm();
+      // ensure any stale state is cleared
+      // resetForm();
     } catch (error) {
       console.error('Error saving member:', error);
       toast.error('Failed to save member');
@@ -181,7 +190,7 @@ export default function Members() {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 m-0">
           <div className="relative top-10 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <button
