@@ -46,7 +46,10 @@ export default function LoginPage() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <PageHeader title="Login" description="Platform admin access" showButton={false} />
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 text-center">Login</h1>
+        <p className="text-sm text-gray-500 text-center">Enter your email and password to login</p>
+      </div>
       <div className="card max-w-md mx-auto">
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
@@ -56,7 +59,7 @@ export default function LoginPage() {
               className="input-field"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@platform.local"
+              placeholder="Enter email"
               required
             />
           </div>
