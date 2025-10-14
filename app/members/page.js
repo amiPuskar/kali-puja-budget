@@ -9,7 +9,7 @@ import { COLLECTIONS } from '@/lib/firebase';
 import PageHeader from '@/components/PageHeader';
 
 export default function Members() {
-  const { members, setMembers } = useStore();
+  const { members, setMembers, currentClubId, getFilteredMembers } = useStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
   const [formData, setFormData] = useState({
@@ -30,7 +30,8 @@ export default function Members() {
     try {
       const memberData = {
         ...formData,
-        contribution: parseFloat(formData.contribution) || 0
+        contribution: parseFloat(formData.contribution) || 0,
+        clubId: currentClubId || null
       };
       
       if (editingMember) {
@@ -90,7 +91,8 @@ export default function Members() {
     setIsModalOpen(false);
   };
 
-  const totalContribution = members.reduce((sum, member) => sum + (member.contribution || 0), 0);
+  const filteredMembers = getFilteredMembers();
+  const totalContribution = filteredMembers.reduce((sum, member) => sum + (member.contribution || 0), 0);
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -125,7 +127,7 @@ export default function Members() {
 
       {/* Members Grid */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {members.map((member) => (
+        {filteredMembers.map((member) => (
           <div key={member.id} className="card">
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-3">

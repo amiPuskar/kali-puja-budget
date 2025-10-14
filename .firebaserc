@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "puja-budget",
+    "prod": "puja-budget"
+  },
+  "targets": {},
+  "etags": {}
+}

@@ -9,7 +9,13 @@ import { COLLECTIONS } from '@/lib/firebase';
 import PageHeader from '@/components/PageHeader';
 
 export default function Expenses() {
-  const { expenses, setExpenses, budget, setBudget, getBudgetCategories } = useStore();
+  const { 
+    expenses, setExpenses, 
+    budget, setBudget, 
+    getBudgetCategories,
+    currentClubId, currentYear,
+    getFilteredExpenses
+  } = useStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
   const [formData, setFormData] = useState({
@@ -35,7 +41,9 @@ export default function Expenses() {
       const expenseData = {
         ...formData,
         amount: parseFloat(formData.amount) || 0,
-        date: new Date(formData.date).toISOString()
+        date: new Date(formData.date).toISOString(),
+        clubId: currentClubId || null,
+        year: currentYear || new Date(formData.date).getFullYear()
       };
       
       if (editingExpense) {
@@ -93,6 +101,7 @@ export default function Expenses() {
   };
 
   const totalSpent = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
+  const filteredExpenses = getFilteredExpenses();
 
   // Get categories from budget items plus default categories
   const budgetCategories = getBudgetCategories();
@@ -139,7 +148,7 @@ export default function Expenses() {
 
       {/* Expenses List */}
       <div className="space-y-4">
-        {expenses.map((expense) => (
+        {filteredExpenses.map((expense) => (
           <div key={expense.id} className="card">
             <div className="flex items-start justify-between">
               <div className="flex items-start space-x-4">

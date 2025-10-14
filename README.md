@@ -28,6 +28,22 @@ A modern, responsive web application built with Next.js 14+ for managing Puja co
 
 - Node.js 18+ installed on your system
 - Firebase project with Firestore enabled
+### Environment Variables
+
+Create a `.env.local` file in the project root:
+
+```
+NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-XXXXXXX
+```
+
+Restart dev server after editing `.env.local`.
+
 - Git (for cloning the repository)
 
 ## Setup Instructions
