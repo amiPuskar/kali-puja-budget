@@ -100,6 +100,13 @@ export default function Dashboard() {
       bgColor: 'bg-pink-100',
     },
     {
+      name: 'Total Donations',
+      value: totalDonations.toLocaleString(),
+      icon: Gift,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-100',
+    },
+    {
       name: 'Total Prizes',
       value: prizes.length.toString(),
       icon: Trophy,

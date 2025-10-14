@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Package, CheckCircle, Clock, ShoppingCart } from 'lucide-react';
 import useStore from '@/store/useStore';
 import { subscribeToCollection, addDocument, updateDocument, deleteDocument } from '@/lib/firebase';
+import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import PageHeader from '@/components/PageHeader';
 
@@ -37,12 +38,15 @@ export default function Inventory() {
       
       if (editingItem) {
         await updateDocument(COLLECTIONS.INVENTORY, editingItem.id, itemData);
+        toast.success('Item updated');
       } else {
         await addDocument(COLLECTIONS.INVENTORY, itemData);
+        toast.success('Item added');
       }
       resetForm();
     } catch (error) {
       console.error('Error saving inventory item:', error);
+      toast.error('Failed to save item');
     }
   };
 

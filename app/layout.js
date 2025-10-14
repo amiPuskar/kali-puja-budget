@@ -1,6 +1,7 @@
 import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import ToastHost from '@/components/ToastHost';
 
 export const metadata = {
   title: 'Puja Budget',
@@ -16,6 +17,7 @@ export default function RootLayout({ children }) {
           {children}
         </main>
         <Footer />
+        <ToastHost />
       </body>
     </html>
   );

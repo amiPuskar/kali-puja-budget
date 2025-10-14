@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Gift, DollarSign, Building, User } from 'lucide-react';
 import useStore from '@/store/useStore';
 import { subscribeToCollection, addDocument, updateDocument, deleteDocument } from '@/lib/firebase';
+import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import PageHeader from '@/components/PageHeader';
 
@@ -37,12 +38,15 @@ export default function Sponsors() {
       
       if (editingSponsor) {
         await updateDocument(COLLECTIONS.SPONSORS, editingSponsor.id, sponsorData);
+        toast.success('Sponsor updated');
       } else {
         await addDocument(COLLECTIONS.SPONSORS, sponsorData);
+        toast.success('Sponsor added');
       }
       resetForm();
     } catch (error) {
       console.error('Error saving sponsor:', error);
+      toast.error('Failed to save sponsor');
     }
   };
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Calendar, Users, Trophy, User, Clock, MapPin } from 'lucide-react';
 import useStore from '@/store/useStore';
 import { subscribeToCollection, addDocument, updateDocument, deleteDocument } from '@/lib/firebase';
+import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import PageHeader from '@/components/PageHeader';
 
@@ -85,12 +86,15 @@ export default function Events() {
       
       if (editingEvent) {
         await updateDocument(COLLECTIONS.EVENTS, editingEvent.id, eventData);
+        toast.success('Event updated');
       } else {
         await addDocument(COLLECTIONS.EVENTS, eventData);
+        toast.success('Event added');
       }
       resetEventForm();
     } catch (error) {
       console.error('Error saving event:', error);
+      toast.error('Failed to save event');
     }
   };
 
@@ -99,12 +103,15 @@ export default function Events() {
     try {
       if (editingParticipant) {
         await updateDocument(COLLECTIONS.PARTICIPANTS, editingParticipant.id, participantFormData);
+        toast.success('Participant updated');
       } else {
         await addDocument(COLLECTIONS.PARTICIPANTS, participantFormData);
+        toast.success('Participant added');
       }
       resetParticipantForm();
     } catch (error) {
       console.error('Error saving participant:', error);
+      toast.error('Failed to save participant');
     }
   };
 
@@ -118,12 +125,15 @@ export default function Events() {
       
       if (editingPrize) {
         await updateDocument(COLLECTIONS.PRIZES, editingPrize.id, prizeData);
+        toast.success('Prize updated');
       } else {
         await addDocument(COLLECTIONS.PRIZES, prizeData);
+        toast.success('Prize added');
       }
       resetPrizeForm();
     } catch (error) {
       console.error('Error saving prize:', error);
+      toast.error('Failed to save prize');
     }
   };
 
