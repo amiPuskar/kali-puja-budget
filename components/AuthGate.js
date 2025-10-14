@@ -9,7 +9,7 @@ import Footer from '@/components/Footer';
 import ToastHost from '@/components/ToastHost';
 
 export default function AuthGate({ children }) {
-  const { user, hydrated, hydrateAuthFromStorage, setCurrentClubId } = useStore();
+  const { user, hydrated, hydrateAuthFromStorage, setCurrentClubId, currentClubId } = useStore();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -29,7 +29,17 @@ export default function AuthGate({ children }) {
     }
     // Role-based route restrictions
     if (user?.role === 'platform_admin') {
-      // Allow only /clubs and nested
+      // If platform admin is "managing" a club (currentClubId set), allow club-admin routes
+      if (currentClubId) {
+        const allowedClubRoutes = ['/', '/dashboard', '/members', '/pujas'];
+        const isAllowedBase = allowedClubRoutes.includes(pathname);
+        const isClubManage = pathname.startsWith('/clubs/');
+        if (!isAllowedBase && !isClubManage) {
+          router.replace('/dashboard');
+        }
+        return;
+      }
+      // Otherwise, restrict to clubs area
       if (!pathname.startsWith('/clubs')) {
         router.replace('/clubs');
       }
@@ -37,11 +47,11 @@ export default function AuthGate({ children }) {
     }
     if (user?.role === 'club_admin' || user?.role === 'member') {
       // Allow: '/', '/members', '/pujas', and '/clubs/[id]' for manage
-      const allowed = ['/', '/members', '/pujas'];
+      const allowed = ['/', '/dashboard', '/members', '/pujas'];
       const isAllowedBase = allowed.includes(pathname);
       const isClubManage = pathname.startsWith('/clubs/');
       if (!isAllowedBase && !isClubManage) {
-        router.replace('/');
+        router.replace('/dashboard');
       }
     }
   }, [user, router, pathname]);

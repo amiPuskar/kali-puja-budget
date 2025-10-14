@@ -6,7 +6,7 @@ import useStore from '@/store/useStore';
 import { Home, UserCheck, Receipt, CheckSquare, Package, Gift, Target, Calendar, Users } from 'lucide-react';
 
 const navItems = [
-  { name: 'Dashboard', href: '/', icon: Home },
+  { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'Budget', href: '/budget', icon: Target },
   { name: 'Members', href: '/members', icon: UserCheck },
   { name: 'Expenses', href: '/expenses', icon: Receipt },

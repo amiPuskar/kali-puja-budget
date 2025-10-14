@@ -8,8 +8,8 @@ import { toast } from '@/lib/toast';
 import { findClubByCredentials } from '@/lib/firebase';
 
 // Static platform admin credentials (change as needed)
-const ADMIN_EMAIL = 'admin@platform.local';
-const ADMIN_PASSWORD = 'admin123';
+const ADMIN_EMAIL = 'admin@admin.com';
+const ADMIN_PASSWORD = 'admin ';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,7 +25,7 @@ export default function LoginPage() {
       if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
         setUser({ id: 'platform-admin', name: 'Platform Admin', role: 'platform_admin' });
         toast.success('Logged in as platform admin');
-        router.replace('/');
+        router.replace('/clubs');
         return;
       }
 

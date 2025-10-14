@@ -14,7 +14,9 @@ const useStore = create((set, get) => ({
   prizes: [],
   clubs: [],
   pujas: [],
+  contributions: [],
   currentClubId: null,
+  currentPujaId: null,
   currentYear: new Date().getFullYear(),
   user: null, // { id, name, role: 'platform_admin' | 'club_admin' | 'member', clubId? }
   hydrated: false,
@@ -35,7 +37,9 @@ const useStore = create((set, get) => ({
   setPrizes: (prizes) => set({ prizes }),
   setClubs: (clubs) => set({ clubs }),
   setPujas: (pujas) => set({ pujas }),
+  setContributions: (contributions) => set({ contributions }),
   setCurrentClubId: (currentClubId) => set({ currentClubId }),
+  setCurrentPujaId: (currentPujaId) => set({ currentPujaId }),
   setCurrentYear: (currentYear) => set({ currentYear }),
   setUser: (user) => {
     if (typeof window !== 'undefined') {
@@ -87,56 +91,63 @@ const useStore = create((set, get) => ({
   },
 
   getFilteredMembers: () => {
-    const { members, currentClubId } = get();
-    if (!currentClubId) return members;
-    return members.filter(m => m.clubId === currentClubId);
+    const { members, currentClubId, currentPujaId } = get();
+    const byClub = currentClubId ? members.filter(m => m.clubId === currentClubId) : members;
+    // Members are club-scoped; contributions are per puja
+    return byClub;
   },
 
   getFilteredExpenses: () => {
-    const { expenses, currentClubId, currentYear } = get();
+    const { expenses, currentClubId, currentYear, currentPujaId } = get();
     return expenses.filter(e => (
       (!currentClubId || e.clubId === currentClubId) &&
-      (!currentYear || (e.year ?? (e.date ? new Date(e.date).getFullYear() : null)) === currentYear)
+      (!currentYear || (e.year ?? (e.date ? new Date(e.date).getFullYear() : null)) === currentYear) &&
+      (!currentPujaId || e.pujaId === currentPujaId)
     ));
   },
 
   getFilteredTasks: () => {
-    const { tasks, currentClubId, currentYear } = get();
+    const { tasks, currentClubId, currentYear, currentPujaId } = get();
     return tasks.filter(t => (
       (!currentClubId || t.clubId === currentClubId) &&
-      (!currentYear || (t.year ?? (t.dueDate ? new Date(t.dueDate).getFullYear() : null)) === currentYear)
+      (!currentYear || (t.year ?? (t.dueDate ? new Date(t.dueDate).getFullYear() : null)) === currentYear) &&
+      (!currentPujaId || t.pujaId === currentPujaId)
     ));
   },
 
   getFilteredInventory: () => {
-    const { inventory, currentClubId, currentYear } = get();
+    const { inventory, currentClubId, currentYear, currentPujaId } = get();
     return inventory.filter(i => (
       (!currentClubId || i.clubId === currentClubId) &&
-      (!currentYear || (i.year ?? null) === currentYear)
+      (!currentYear || (i.year ?? null) === currentYear) &&
+      (!currentPujaId || i.pujaId === currentPujaId)
     ));
   },
 
   getFilteredSponsors: () => {
-    const { sponsors, currentClubId, currentYear } = get();
+    const { sponsors, currentClubId, currentYear, currentPujaId } = get();
     return sponsors.filter(s => (
       (!currentClubId || s.clubId === currentClubId) &&
-      (!currentYear || (s.year ?? null) === currentYear)
+      (!currentYear || (s.year ?? null) === currentYear) &&
+      (!currentPujaId || s.pujaId === currentPujaId)
     ));
   },
 
   getFilteredEvents: () => {
-    const { events, currentClubId, currentYear } = get();
+    const { events, currentClubId, currentYear, currentPujaId } = get();
     return events.filter(ev => (
       (!currentClubId || ev.clubId === currentClubId) &&
-      (!currentYear || (ev.year ?? (ev.date ? new Date(ev.date).getFullYear() : null)) === currentYear)
+      (!currentYear || (ev.year ?? (ev.date ? new Date(ev.date).getFullYear() : null)) === currentYear) &&
+      (!currentPujaId || ev.pujaId === currentPujaId)
     ));
   },
 
   getFilteredParticipants: () => {
-    const { participants, currentClubId, currentYear } = get();
+    const { participants, currentClubId, currentYear, currentPujaId } = get();
     return participants.filter(p => (
       (!currentClubId || p.clubId === currentClubId) &&
-      (!currentYear || (p.year ?? null) === currentYear)
+      (!currentYear || (p.year ?? null) === currentYear) &&
+      (!currentPujaId || p.pujaId === currentPujaId)
     ));
   },
 
@@ -149,8 +160,12 @@ const useStore = create((set, get) => ({
   },
 
   getTotalCollected: () => {
-    const members = get().getFilteredMembers();
-    return members.reduce((total, member) => total + (member.contribution || 0), 0);
+    // Sum contributions collection per puja instead of member field
+    const { contributions, currentClubId, currentPujaId } = get();
+    const list = contributions.filter(c => (
+      (!currentClubId || c.clubId === currentClubId) && (!currentPujaId || c.pujaId === currentPujaId)
+    ));
+    return list.reduce((total, c) => total + (c.amount || 0), 0);
   },
 
   getTotalSpent: () => {
