@@ -128,8 +128,8 @@ export default function Signup() {
               <h3 className="text-sm font-medium text-blue-900 mb-2">What happens next?</h3>
               <ul className="text-xs text-blue-700 text-left space-y-1">
                 <li>• Super Admin will review your details</li>
-                <li>• You'll be assigned a role (Member by default)</li>
-                <li>• You'll receive access to the system</li>
+                <li>• You&apos;ll be assigned a role (Member by default)</li>
+                <li>• You&apos;ll receive access to the system</li>
                 <li>• You can then login with your credentials</li>
               </ul>
             </div>
@@ -327,7 +327,7 @@ export default function Signup() {
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
             <h3 className="text-sm font-medium text-blue-900 mb-2">Registration Process:</h3>
             <p className="text-xs text-blue-700">
-              Your registration will be reviewed by a Super Admin. Once approved, you'll be able to login and access the system with your credentials.
+              Your registration will be reviewed by a Super Admin. Once approved, you&apos;ll be able to login and access the system with your credentials.
             </p>
           </div>
         </div>

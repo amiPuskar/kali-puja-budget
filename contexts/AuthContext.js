@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { isAdmin as checkIsAdmin, isSuperAdmin as checkIsSuperAdmin } from '@/lib/roles';
 
 const AuthContext = createContext();
 
@@ -25,7 +26,31 @@ export const AuthProvider = ({ children }) => {
         const userData = localStorage.getItem('user');
         if (userData) {
           const parsedUser = JSON.parse(userData);
-          setUser(parsedUser);
+          console.log('Loaded user from localStorage:', parsedUser);
+          
+          // Validate user data integrity
+          if (parsedUser.originalRole && parsedUser.role) {
+            const { getAccessLevel } = require('@/lib/roles');
+            const expectedAccessLevel = getAccessLevel(parsedUser.originalRole);
+            
+            if (parsedUser.role !== expectedAccessLevel) {
+              console.warn('User role mismatch detected. Expected:', expectedAccessLevel, 'Found:', parsedUser.role);
+              console.log('Fixing user role automatically...');
+              
+              // Fix the role automatically
+              const correctedUser = {
+                ...parsedUser,
+                role: expectedAccessLevel
+              };
+              
+              localStorage.setItem('user', JSON.stringify(correctedUser));
+              setUser(correctedUser);
+            } else {
+              setUser(parsedUser);
+            }
+          } else {
+            setUser(parsedUser);
+          }
         }
       } catch (error) {
         console.error('Error parsing user data:', error);
@@ -49,6 +74,38 @@ export const AuthProvider = ({ children }) => {
     router.replace('/login');
   };
 
+  const refreshUserSession = (updatedUserData) => {
+    setUser(updatedUserData);
+    localStorage.setItem('user', JSON.stringify(updatedUserData));
+  };
+
+  const forceRefreshUserRole = () => {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      const parsedUser = JSON.parse(userData);
+      if (parsedUser.originalRole) {
+        const { getAccessLevel } = require('@/lib/roles');
+        const correctedRole = getAccessLevel(parsedUser.originalRole);
+        
+        const correctedUser = {
+          ...parsedUser,
+          role: correctedRole
+        };
+        
+        console.log('Force refreshing user role:', {
+          originalRole: parsedUser.originalRole,
+          oldAccessRole: parsedUser.role,
+          newAccessRole: correctedRole
+        });
+        
+        localStorage.setItem('user', JSON.stringify(correctedUser));
+        setUser(correctedUser);
+        return true;
+      }
+    }
+    return false;
+  };
+
   const hasRole = (requiredRoles) => {
     if (!user) return false;
     if (Array.isArray(requiredRoles)) {
@@ -58,11 +115,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   const isAdmin = () => {
-    return hasRole(['super_admin', 'admin']);
+    const result = checkIsAdmin(user?.role);
+    console.log('isAdmin check:', { userRole: user?.role, result });
+    return result;
   };
 
   const isSuperAdmin = () => {
-    return hasRole('super_admin');
+    const result = checkIsSuperAdmin(user?.role);
+    console.log('isSuperAdmin check:', { userRole: user?.role, result });
+    return result;
   };
 
   const value = {
@@ -70,6 +131,8 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     logout,
+    refreshUserSession,
+    forceRefreshUserRole,
     hasRole,
     isAdmin,
     isSuperAdmin

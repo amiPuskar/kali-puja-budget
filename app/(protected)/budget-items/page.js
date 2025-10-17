@@ -8,11 +8,12 @@ import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
+import { hasPermission } from '@/lib/roles';
 
 export default function BudgetItems() {
   const { budgetItems, setBudgetItems } = useStore();
-  const { isAdmin } = useAuth();
-  const canManage = isAdmin();
+  const { user } = useAuth();
+  const canManage = hasPermission(user?.role, 'canManageBudgetItems');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({
@@ -94,6 +95,24 @@ export default function BudgetItems() {
   ];
 
   // Members can view read-only; admins can manage
+
+  if (!canManage) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Budget Items"
+          description="Manage default budget items (prices are set per puja)"
+          showButton={false}
+        />
+        <div className="card text-center py-12">
+          <div className="text-gray-500">
+            <p className="text-lg font-medium mb-2">Access Denied</p>
+            <p>Only Admins can manage budget items.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

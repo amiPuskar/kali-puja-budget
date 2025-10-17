@@ -167,7 +167,7 @@ export default function SignupLink() {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-900">Review & Approve</p>
-              <p className="text-sm text-gray-600">Go to "Pending Members" page to review and approve new member requests.</p>
+              <p className="text-sm text-gray-600">Go to &quot;Pending Members&quot; page to review and approve new member requests.</p>
             </div>
           </div>
           
@@ -189,7 +189,7 @@ export default function SignupLink() {
         <ul className="text-sm text-blue-800 space-y-2">
           <li>• Share the link in club WhatsApp groups or social media</li>
           <li>• Print the QR code and display it at club events</li>
-          <li>• Regularly check the "Pending Members" page for new requests</li>
+          <li>• Regularly check the &quot;Pending Members&quot; page for new requests</li>
           <li>• Assign appropriate roles when approving members</li>
           <li>• Rejected members can reapply with the same link</li>
         </ul>

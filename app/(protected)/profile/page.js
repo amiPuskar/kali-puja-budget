@@ -12,7 +12,7 @@ export default function ProfilePage() {
   const { user, login } = useAuth();
   const { members, setMembers } = useStore();
   const [isSaving, setIsSaving] = useState(false);
-  const [profile, setProfile] = useState({ name: '', email: '', contact: '' });
+  const [profile, setProfile] = useState({ name: '', email: '', contact: '', role: '' });
   const [passwordForm, setPasswordForm] = useState({ next: '', confirm: '' });
 
   useEffect(() => {
@@ -32,13 +32,15 @@ export default function ProfilePage() {
       setProfile({
         name: memberRecord.name || '',
         email: memberRecord.email || '',
-        contact: memberRecord.contact || ''
+        contact: memberRecord.contact || '',
+        role: memberRecord.role || ''
       });
     } else {
       setProfile({
         name: user.name || '',
         email: user.email || '',
-        contact: user.contact || ''
+        contact: user.contact || '',
+        role: user.originalRole || user.role || ''
       });
     }
   }, [memberRecord, user]);
@@ -132,6 +134,21 @@ export default function ProfilePage() {
                 onChange={(e) => setProfile({ ...profile, name: e.target.value })}
                 className="input-field pl-10"
                 placeholder="Enter full name"
+                disabled
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <ShieldAlert className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                value={profile.role}
+                className="input-field pl-10 bg-gray-50"
+                placeholder="Your role"
                 disabled
               />
             </div>

@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { Bell, User, LogOut, Menu, X, ChevronDown, Calendar } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePuja } from '@/contexts/PujaContext';
+import { getAccessLevelDisplayName } from '@/lib/roles';
 
 const TopBar = ({ onMenuClick, isMenuOpen }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showPujaSelector, setShowPujaSelector] = useState(false);
   
-  const { user, logout } = useAuth();
+  const { user, logout, forceRefreshUserRole } = useAuth();
   const { currentPuja, pujas, switchPuja } = usePuja();
 
   const handleLogout = () => {
@@ -48,8 +49,13 @@ const TopBar = ({ onMenuClick, isMenuOpen }) => {
                 className="flex items-center space-x-2 px-3 py-2 bg-primary-50 hover:bg-primary-100 border border-primary-200 rounded-lg transition-colors min-w-0"
               >
                 <Calendar className="w-4 h-4 text-primary-600 flex-shrink-0" />
-                <div className="text-sm font-medium text-primary-900 truncate min-w-0 flex-1">
-                  {currentPuja.name}
+                <div className="text-left min-w-0 flex-1">
+                  <div className="text-sm font-medium text-primary-900 truncate">
+                    {currentPuja.name}
+                  </div>
+                  <div className="text-xs text-primary-600 truncate">
+                    {currentPuja.year}
+                  </div>
                 </div>
                 <ChevronDown className="w-4 h-4 text-primary-600 flex-shrink-0" />
               </button>
@@ -113,7 +119,8 @@ const TopBar = ({ onMenuClick, isMenuOpen }) => {
               </div>
               <div className="hidden sm:block text-left">
                 <p className="text-sm font-medium truncate">{user?.name || 'User'}</p>
-                <p className="text-xs text-gray-500 capitalize">{user?.role?.replace('_', ' ')}</p>
+                <p className="text-xs text-gray-500 capitalize">{getAccessLevelDisplayName(user?.role)}</p>
+                <p className="text-xs text-gray-400">DB: {user?.originalRole}</p>
               </div>
             </button>
 
@@ -133,6 +140,21 @@ const TopBar = ({ onMenuClick, isMenuOpen }) => {
                   </button>
                 </div>
                 <div className="border-t border-gray-200 py-2">
+                  <button
+                    onClick={() => {
+                      const success = forceRefreshUserRole();
+                      if (success) {
+                        alert('User role refreshed! Page will reload.');
+                        window.location.reload();
+                      } else {
+                        alert('No user data found to refresh.');
+                      }
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors flex items-center space-x-2"
+                  >
+                    <span>🔄</span>
+                    <span>Fix Role Issue</span>
+                  </button>
                   <button
                     onClick={handleLogout}
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center space-x-2"

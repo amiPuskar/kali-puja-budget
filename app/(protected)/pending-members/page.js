@@ -8,6 +8,7 @@ import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
+import { ROLE_OPTIONS } from '@/lib/roles';
 
 export default function PendingMembers() {
   const { pendingMembers, setPendingMembers } = useStore();
@@ -118,12 +119,54 @@ export default function PendingMembers() {
         <h3 className="text-sm font-medium text-gray-900 mb-2">Debug Info</h3>
         <p className="text-xs text-gray-600">Total pending members: {pendingMembers.length}</p>
         <p className="text-xs text-gray-600">Collection: {COLLECTIONS.PENDING_MEMBERS}</p>
-        <button 
-          onClick={() => console.log('Current pending members:', pendingMembers)}
-          className="mt-2 px-3 py-1 bg-blue-500 text-white text-xs rounded"
-        >
-          Log to Console
-        </button>
+        <div className="flex gap-2 mt-2">
+          <button 
+            onClick={() => console.log('Current pending members:', pendingMembers)}
+            className="px-3 py-1 bg-blue-500 text-white text-xs rounded"
+          >
+            Log to Console
+          </button>
+          <button 
+            onClick={() => {
+              console.log('Refreshing pending members...');
+              // Force re-subscription
+              const unsubscribe = subscribeToCollection(COLLECTIONS.PENDING_MEMBERS, (data) => {
+                console.log('Refreshed data:', data);
+                setPendingMembers(data);
+              });
+              setTimeout(() => unsubscribe(), 1000);
+            }}
+            className="px-3 py-1 bg-green-500 text-white text-xs rounded"
+          >
+            Refresh Data
+          </button>
+          <button 
+            onClick={async () => {
+              try {
+                const testData = {
+                  name: 'Test User',
+                  email: 'test@example.com',
+                  contact: '1234567890',
+                  password: 'test123',
+                  status: 'pending',
+                  requestedAt: new Date().toISOString(),
+                  role: 'Member',
+                  approvedBy: null,
+                  approvedAt: null
+                };
+                await addDocument(COLLECTIONS.PENDING_MEMBERS, testData);
+                console.log('Test member created');
+                toast.success('Test member created');
+              } catch (error) {
+                console.error('Error creating test member:', error);
+                toast.error('Failed to create test member');
+              }
+            }}
+            className="px-3 py-1 bg-yellow-500 text-white text-xs rounded"
+          >
+            Create Test Member
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -261,11 +304,11 @@ export default function PendingMembers() {
                     onChange={(e) => setApprovalData({ ...approvalData, role: e.target.value })}
                     className="input-field"
                   >
-                    <option value="Member">Member</option>
-                    <option value="Volunteer">Volunteer</option>
-                    <option value="Manager">Manager</option>
-                    <option value="Vice President">Vice President</option>
-                    <option value="President">President</option>
+                    {ROLE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 

@@ -8,10 +8,11 @@ import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
+import { getAccessLevel, ROLE_OPTIONS } from '@/lib/roles';
 
 export default function Members() {
   const { members, setMembers } = useStore();
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, user, refreshUserSession } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
   const [formData, setFormData] = useState({
@@ -30,16 +31,50 @@ export default function Members() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Prepare member data - only include password if it's provided
       const memberData = {
-        ...formData
+        name: formData.name,
+        role: formData.role,
+        contact: formData.contact,
+        email: formData.email
       };
+
+      // Only include password if it's provided and not empty
+      if (formData.password && formData.password.trim() !== '') {
+        memberData.password = formData.password;
+      }
 
       if (editingMember) {
         await updateDocument(COLLECTIONS.MEMBERS, editingMember.id, memberData);
+        
+        // If updating current user's role, refresh their session
+        if (user && editingMember.id === user.id && editingMember.role !== memberData.role) {
+          console.log('Current user role updated, refreshing session...');
+          const newAccessRole = getAccessLevel(memberData.role);
+          const updatedUserData = {
+            ...user,
+            role: newAccessRole,
+            originalRole: memberData.role
+          };
+          
+          refreshUserSession(updatedUserData);
+          toast.success('Member updated. Your session has been refreshed.');
+          
+          // Reload the page to apply new permissions
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        } else {
+          if (formData.password && formData.password.trim() !== '') {
+            toast.success('Member updated with new password');
+          } else {
+            toast.success('Member updated (password unchanged)');
+          }
+        }
+        
         setEditingMember(null);
         setIsModalOpen(false);
         setFormData({ name: '', role: '', contact: '', email: '', password: '' });
-        toast.success('Member updated');
       } else {
         await addDocument(COLLECTIONS.MEMBERS, memberData);
         setEditingMember(null);
@@ -223,13 +258,11 @@ export default function Members() {
                     className="input-field"
                   >
                     <option value="">Select role</option>
-                           <option value="President">President</option>
-                           <option value="Vice President">Vice President</option>
-                           <option value="Secretary">Secretary</option>
-                           <option value="Treasurer">Treasurer</option>
-                           <option value="Manager">Manager</option>
-                           <option value="Member">Member</option>
-                           <option value="Volunteer">Volunteer</option>
+                    {ROLE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 
@@ -261,14 +294,15 @@ export default function Members() {
                   
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Password
+                    Password {editingMember ? '(Optional - leave blank to keep current password)' : '*'}
                   </label>
                   <input
                     type="password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="input-field"
-                    placeholder="Set initial password"
+                    placeholder={editingMember ? "Enter new password (or leave blank)" : "Set initial password"}
+                    required={!editingMember}
                   />
                 </div>
                 

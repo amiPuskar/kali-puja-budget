@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebaseConfig';
 import { COLLECTIONS } from '@/lib/firebase';
 import { collection, getDocs, query, where, limit } from 'firebase/firestore';
+import { getAccessLevel } from '@/lib/roles';
 
 const MOCK_SUPER_ADMIN = {
   email: 'admin@pujabudget.com',
@@ -27,11 +28,8 @@ export default function Login() {
   // const { login } = useAuth();
 
   const mapRoleToAccess = (role) => {
-    if (!role) return 'user';
-    const r = String(role).toLowerCase();
-    if (r === 'president' || r === 'vice president' || r === 'vp') return 'super_admin';
-    if (r === 'manager' || r === 'vm') return 'admin';
-    return 'user';
+    console.log('Role mapping debug:', { originalRole: role });
+    return getAccessLevel(role);
   };
 
   const findMemberByIdentifier = async (identifier) => {
@@ -95,6 +93,12 @@ export default function Login() {
       }
 
       const accessRole = member.id === 'mock-super-admin' ? 'super_admin' : mapRoleToAccess(member.role);
+      
+      console.log('Login Debug:', {
+        memberRole: member.role,
+        mappedAccessRole: accessRole,
+        memberId: member.id
+      });
 
       const userData = {
         id: member.id,
@@ -106,6 +110,7 @@ export default function Login() {
         loginTime: new Date().toISOString()
       };
 
+      console.log('Saving user data to localStorage:', userData);
       localStorage.setItem('user', JSON.stringify(userData));
       router.replace('/');
     } catch (err) {
@@ -237,6 +242,37 @@ export default function Login() {
                 Request membership
               </button>
             </p>
+          </div>
+        </div>
+
+        {/* Debug Section */}
+        <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+          <h3 className="text-sm font-medium text-yellow-800 mb-2">Debug Tools</h3>
+          <div className="space-y-2">
+            <button
+              onClick={() => {
+                localStorage.removeItem('user');
+                alert('User cache cleared! Please refresh the page.');
+              }}
+              className="block text-sm text-yellow-700 hover:text-yellow-800 underline"
+            >
+              Clear User Cache
+            </button>
+            <button
+              onClick={() => {
+                const userData = localStorage.getItem('user');
+                if (userData) {
+                  const user = JSON.parse(userData);
+                  console.log('Current user data:', user);
+                  alert(`Current user data logged to console. Check browser console (F12) for details.`);
+                } else {
+                  alert('No user data found in cache.');
+                }
+              }}
+              className="block text-sm text-yellow-700 hover:text-yellow-800 underline"
+            >
+              Check Current User Data
+            </button>
           </div>
         </div>
 

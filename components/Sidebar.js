@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { hasPermission, ACCESS_LEVELS } from '@/lib/roles';
 import { 
   Home, 
   UserCheck, 
@@ -20,16 +21,16 @@ import {
 
 const Sidebar = ({ isOpen, onClose }) => {
   const pathname = usePathname();
-  const { isAdmin, isSuperAdmin } = useAuth();
+  const { isAdmin, isSuperAdmin, user } = useAuth();
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home, visible: true },
-    { name: 'Puja Management', href: '/pujas', icon: CalendarDays, visible: isSuperAdmin() },
+    { name: 'Puja Management', href: '/pujas', icon: CalendarDays, visible: hasPermission(user?.role, 'canManagePujas') },
     { name: 'Contributions', href: '/contributions', icon: UserCheck, visible: true },
-    { name: 'Members', href: '/members', icon: Users, visible: isSuperAdmin() },
-    { name: 'Pending Members', href: '/pending-members', icon: UserCheck, visible: isSuperAdmin() },
-    { name: 'Signup Link', href: '/signup-link', icon: LinkIcon, visible: isSuperAdmin() },
-    { name: 'Budget Items', href: '/budget-items', icon: Target, visible: isAdmin() },
+    { name: 'Members', href: '/members', icon: Users, visible: hasPermission(user?.role, 'canManageMembers') },
+    { name: 'Pending Members', href: '/pending-members', icon: UserCheck, visible: hasPermission(user?.role, 'canManagePendingMembers') },
+    { name: 'Signup Link', href: '/signup-link', icon: LinkIcon, visible: hasPermission(user?.role, 'canViewSignupLink') },
+    { name: 'Budget Items', href: '/budget-items', icon: Target, visible: hasPermission(user?.role, 'canManageBudgetItems') },
     // Make these visible to all roles (users will have view-only in-page)
     { name: 'Budget Allocations', href: '/budget', icon: DollarSign, visible: true },
     { name: 'Expenses', href: '/expenses', icon: Receipt, visible: true },
