@@ -112,7 +112,7 @@ export default function PendingMembers() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         title="Pending Members"
         description="Review and approve new member registrations"
@@ -120,121 +120,198 @@ export default function PendingMembers() {
       />
 
 
-      {/* Summary Cards - Compact Design */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="card py-3">
-          <div className="flex items-center space-x-2">
+      {/* Summary Cards - Responsive Design */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="card py-3 px-4">
+          <div className="flex items-center space-x-3">
             <div className="flex-shrink-0 p-2 bg-yellow-100 rounded-md">
-              <Clock className="w-4 h-4 text-yellow-600" />
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600" />
             </div>
-            <div>
-              <p className="text-xs font-medium text-gray-600">Pending</p>
-              <p className="text-lg font-semibold text-gray-900">{pendingRequests.length}</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Pending</p>
+              <p className="text-lg sm:text-xl font-semibold text-gray-900">{pendingRequests.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="card py-3">
-          <div className="flex items-center space-x-2">
+        <div className="card py-3 px-4">
+          <div className="flex items-center space-x-3">
             <div className="flex-shrink-0 p-2 bg-green-100 rounded-md">
-              <CheckCircle className="w-4 h-4 text-green-600" />
+              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
             </div>
-            <div>
-              <p className="text-xs font-medium text-gray-600">Approved</p>
-              <p className="text-lg font-semibold text-gray-900">{approvedRequests.length}</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Approved</p>
+              <p className="text-lg sm:text-xl font-semibold text-gray-900">{approvedRequests.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="card py-3">
-          <div className="flex items-center space-x-2">
+        <div className="card py-3 px-4">
+          <div className="flex items-center space-x-3">
             <div className="flex-shrink-0 p-2 bg-red-100 rounded-md">
-              <XCircle className="w-4 h-4 text-red-600" />
+              <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
             </div>
-            <div>
-              <p className="text-xs font-medium text-gray-600">Rejected</p>
-              <p className="text-lg font-semibold text-gray-900">{rejectedRequests.length}</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Rejected</p>
+              <p className="text-lg sm:text-xl font-semibold text-gray-900">{rejectedRequests.length}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Pending Requests */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium text-gray-900">Pending Requests</h3>
+      <div className="space-y-3 sm:space-y-4">
+        <h3 className="text-base sm:text-lg font-medium text-gray-900">Pending Requests</h3>
         {pendingRequests.length === 0 ? (
           <div className="card">
             <p className="text-gray-500 text-sm">No pending membership requests</p>
           </div>
         ) : (
-          pendingRequests.map((member) => (
-            <div key={member.id} className="card bg-yellow-50 border-yellow-200">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0 p-3 bg-yellow-100 rounded-lg">
-                    <User className="w-6 h-6 text-yellow-600" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-lg font-medium text-gray-900">{member.name}</h4>
-                    <div className="mt-2 space-y-1">
-                      <div className="flex items-center space-x-2 text-sm text-gray-600">
-                        <Mail className="w-4 h-4" />
-                        <span>{member.email}</span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-sm text-gray-600">
-                        <Phone className="w-4 h-4" />
-                        <span>{member.contact}</span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-sm text-gray-500">
-                        <Clock className="w-4 h-4" />
-                        <span>Requested: {new Date(member.requestedAt).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => handleApprove(member)}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                    <span>Approve</span>
-                  </button>
-                  <button
-                    onClick={() => handleReject(member)}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
-                  >
-                    <XCircle className="w-4 h-4" />
-                    <span>Reject</span>
-                  </button>
-                </div>
+          <>
+            {/* Desktop Table */}
+            <div className="hidden sm:block card overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Member
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Email
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Contact
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Requested
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {pendingRequests.map((member) => (
+                      <tr key={member.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 p-2 bg-yellow-100 rounded-lg">
+                              <User className="w-4 h-4 text-yellow-600" />
+                            </div>
+                            <div className="ml-3">
+                              <div className="text-sm font-medium text-gray-900">{member.name}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{member.email}</div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{member.contact}</div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-500">
+                            {new Date(member.requestedAt).toLocaleDateString()}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleApprove(member)}
+                              className="text-green-600 hover:text-green-900 transition-colors"
+                              title="Approve member"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleReject(member)}
+                              className="text-red-600 hover:text-red-900 transition-colors"
+                              title="Reject member"
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
-          ))
+            
+            {/* Mobile List - Individual Cards */}
+            <div className="sm:hidden space-y-3">
+              {pendingRequests.map((member) => (
+                <div key={member.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 rounded-full bg-yellow-50 flex items-center justify-center">
+                        <User className="w-4 h-4 text-yellow-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-900">{member.name}</h3>
+                        <p className="text-xs text-gray-500">{member.contact}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="px-2 py-1 bg-yellow-50 text-yellow-700 rounded-md text-xs font-medium">
+                      Pending
+                    </div>
+                  </div>
+                  
+                  {/* Contact Info */}
+                  <div className="mb-3">
+                    <p className="text-xs text-gray-500">{member.email}</p>
+                    <p className="text-xs text-gray-400">
+                      Requested: {new Date(member.requestedAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  
+                  {/* Actions */}
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleApprove(member)}
+                      className="flex-1 py-2 px-3 text-sm font-medium text-green-600 bg-green-50 rounded-md hover:bg-green-100 transition-colors"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => handleReject(member)}
+                      className="flex-1 py-2 px-3 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
-      {/* Approved Requests - Compact */}
+      {/* Approved Requests - Responsive */}
       {approvedRequests.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-900">Recently Approved ({approvedRequests.length})</h3>
+          <h3 className="text-sm sm:text-base font-medium text-gray-900">Recently Approved ({approvedRequests.length})</h3>
           <div className="grid grid-cols-1 gap-2">
             {approvedRequests.slice(0, 5).map((member) => (
-              <div key={member.id} className="card py-2 bg-green-50 border-green-200">
-                <div className="flex items-center justify-between">
+              <div key={member.id} className="card py-2 px-3 bg-green-50 border-green-200">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1 sm:space-y-0">
                   <div className="flex items-center space-x-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium text-gray-900">{member.name}</span>
+                    <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                        <span className="text-sm font-medium text-gray-900 truncate">{member.name}</span>
                         <span className="text-xs text-green-600">({member.approvedRole})</span>
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 truncate">
                         Approved by: {member.reviewedBy || member.approvedBy || 'Unknown'}
                       </div>
                     </div>
                   </div>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-gray-500 flex-shrink-0">
                     {new Date(member.reviewedAt || member.approvedAt).toLocaleDateString()}
                   </span>
                 </div>
@@ -249,26 +326,27 @@ export default function PendingMembers() {
         </div>
       )}
 
-      {/* Rejected Requests - Compact */}
+      {/* Rejected Requests - Responsive */}
       {rejectedRequests.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-900">Recently Rejected ({rejectedRequests.length})</h3>
+          <h3 className="text-sm sm:text-base font-medium text-gray-900">Recently Rejected ({rejectedRequests.length})</h3>
           <div className="grid grid-cols-1 gap-2">
             {rejectedRequests.slice(0, 5).map((member) => (
-              <div key={member.id} className="card py-2 bg-red-50 border-red-200">
-                <div className="flex items-center justify-between">
+              <div key={member.id} className="card py-2 px-3 bg-red-50 border-red-200">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1 sm:space-y-0">
                   <div className="flex items-center space-x-2">
-                    <XCircle className="w-4 h-4 text-red-600" />
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium text-gray-900">{member.name}</span>
+                    <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                        <span className="text-sm font-medium text-gray-900 truncate">{member.name}</span>
+                        <span className="text-xs text-red-600">Rejected</span>
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 truncate">
                         Rejected by: {member.reviewedBy || 'Unknown'}
                       </div>
                     </div>
                   </div>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-gray-500 flex-shrink-0">
                     {new Date(member.reviewedAt).toLocaleDateString()}
                   </span>
                 </div>

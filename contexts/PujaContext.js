@@ -44,14 +44,9 @@ export const PujaProvider = ({ children }) => {
           
           setPujas(data);
           
-          // CRITICAL: Always use the first puja as default to ensure consistency
-          // This ensures all users see the same data initially
+          // Only set current puja if user has a saved preference
           if (data.length > 0) {
-            const firstPuja = data[0];
-            
-            // Check if current puja is still valid
             const savedCurrentPuja = localStorage.getItem('currentPuja');
-            let shouldSetCurrentPuja = true;
             
             if (savedCurrentPuja) {
               try {
@@ -60,19 +55,25 @@ export const PujaProvider = ({ children }) => {
                 const pujaExists = data.find(p => p.id === parsedCurrentPuja.id);
                 if (pujaExists) {
                   setCurrentPuja(pujaExists);
-                  shouldSetCurrentPuja = false;
+                  console.log('Restored saved current puja:', pujaExists.name);
+                } else {
+                  // Saved puja no longer exists, clear it
+                  setCurrentPuja(null);
+                  localStorage.removeItem('currentPuja');
+                  console.log('Saved puja no longer exists, cleared current puja');
                 }
               } catch (error) {
                 console.error('Error parsing saved current puja:', error);
+                setCurrentPuja(null);
+                localStorage.removeItem('currentPuja');
               }
+            } else {
+              // No saved puja preference, don't auto-select
+              setCurrentPuja(null);
+              console.log('No saved puja preference, user must manually select');
             }
-            
-            // If no valid saved puja, use the first one
-            if (shouldSetCurrentPuja) {
-              setCurrentPuja(firstPuja);
-              localStorage.setItem('currentPuja', JSON.stringify(firstPuja));
-              console.log('Set current puja to first available:', firstPuja.name);
-            }
+          } else {
+            setCurrentPuja(null);
           }
           
           setLoading(false);

@@ -16,6 +16,7 @@ import { debugRoleMapping, validateUserRole } from '@/lib/roleDebug';
 export default function Members() {
   const { members, setMembers } = useStore();
   const { isSuperAdmin, user, refreshUserSession, refreshUserFromDatabase } = useAuth();
+  const canManage = isSuperAdmin ? isSuperAdmin() : false;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
   const [formData, setFormData] = useState({
@@ -249,56 +250,125 @@ export default function Members() {
         ]}
       />
 
-      {/* Members List */}
-      <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
-        {members.map((member) => (
-          <div key={member.id} className="card">
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-              <div className="flex items-start space-x-3 min-w-0 flex-1">
-                <div className="flex-shrink-0 p-2 bg-blue-100 rounded-lg">
-                  <User className="w-5 h-5 text-blue-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-lg font-medium text-gray-900 truncate">{member.name}</h3>
-                  <div className="mt-1">
+      {/* Desktop Table */}
+      <div className="hidden sm:block card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Member
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Role
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Contact
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Email
+                </th>
+                {canManage && (
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                )}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {members.map((member) => (
+                <tr key={member.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 p-2 bg-blue-100 rounded-lg">
+                        <User className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div className="ml-3">
+                        <div className="text-sm font-medium text-gray-900">{member.name}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
                     <span className="inline-block text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
                       {member.role}
                     </span>
-                  </div>
-                  <div className="mt-2 space-y-1">
-                    {member.contact && (
-                      <div className="text-sm text-gray-600 truncate">
-                        📞 {member.contact}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{member.contact || '-'}</div>
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{member.email || '-'}</div>
+                  </td>
+                  {canManage && (
+                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleEdit(member)}
+                          className="text-blue-600 hover:text-blue-900 transition-colors"
+                          title="Edit member"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(member.id)}
+                          className="text-red-600 hover:text-red-900 transition-colors"
+                          title="Delete member"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
-                    )}
-                    {member.email && (
-                      <div className="text-sm text-gray-600 truncate">
-                        ✉️ {member.email}
-                      </div>
-                    )}
-                  </div>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      {/* Mobile List - Individual Cards */}
+      <div className="sm:hidden space-y-3">
+        {members.map((member) => (
+          <div key={member.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
+                  <User className="w-4 h-4 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-900">{member.name}</h3>
+                  <p className="text-xs text-gray-500">{member.contact || 'No contact'}</p>
                 </div>
               </div>
-              {/* Action buttons - show on next line on mobile, inline on desktop */}
-              <div className="flex space-x-1 sm:ml-2 sm:flex-shrink-0">
+              
+              <div className="px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-medium">
+                {member.role}
+              </div>
+            </div>
+            
+            {/* Contact Info */}
+            <div className="mb-3">
+              <p className="text-xs text-gray-500">{member.email || 'No email'}</p>
+            </div>
+            
+            {/* Actions */}
+            {canManage && (
+              <div className="flex space-x-2">
                 <button
                   onClick={() => handleEdit(member)}
-                  className="flex-1 sm:flex-none p-2 sm:p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors flex items-center justify-center sm:justify-start"
-                  title="Edit member"
+                  className="flex-1 py-2 px-3 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
                 >
-                  <Edit2 className="w-4 h-4" />
-                  <span className="ml-2 sm:hidden text-sm">Edit</span>
+                  Edit
                 </button>
                 <button
                   onClick={() => handleDelete(member.id)}
-                  className="flex-1 sm:flex-none p-2 sm:p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors flex items-center justify-center sm:justify-start"
-                  title="Delete member"
+                  className="flex-1 py-2 px-3 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors"
                 >
-                  <Trash2 className="w-4 h-4" />
-                  <span className="ml-2 sm:hidden text-sm">Delete</span>
+                  Delete
                 </button>
               </div>
-            </div>
+            )}
           </div>
         ))}
       </div>

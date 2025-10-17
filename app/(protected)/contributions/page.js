@@ -14,7 +14,7 @@ export default function Contributions() {
   const { members, contributions, setMembers, setContributions } = useStore();
   const { currentPuja } = usePuja();
   const { isAdmin } = useAuth();
-  const canManage = isAdmin();
+  const canManage = isAdmin ? isAdmin() : false;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingContribution, setEditingContribution] = useState(null);
   const [formData, setFormData] = useState({
@@ -187,97 +187,194 @@ export default function Contributions() {
 
       {/* All Members with Contribution Status */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center flex-wrap sm:flex-nowrap justify-between">
           <h3 className="text-lg font-semibold text-gray-900">All Members - Contribution Status</h3>
           <div className="text-sm text-gray-500">
             {membersWithContributions.filter(m => m.hasContributed).length} of {members.length} contributed
           </div>
         </div>
         
-        {membersWithContributions.map((member) => (
-          <div key={member.id} className="card">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className={`flex-shrink-0 p-3 rounded-lg ${
-                  member.hasContributed ? 'bg-green-100' : 'bg-gray-100'
-                }`}>
-                  <User className={`w-6 h-6 ${
-                    member.hasContributed ? 'text-green-600' : 'text-gray-400'
-                  }`} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-lg font-medium text-gray-900 truncate">{member.name}</h3>
-                  {member.contact && (
-                    <p className="text-xs text-gray-400 mt-1 truncate">{member.contact}</p>
+        {/* Desktop Table */}
+        <div className="hidden sm:block card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Member
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Contact
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Contribution
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                  {canManage && (
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                   )}
-                </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="text-right">
-                  {member.hasContributed ? (
-                    <div>
-                      <p className="text-lg font-semibold text-green-600">
-                        ₹{member.contribution.amount?.toLocaleString() || 0}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(member.contribution.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="text-lg font-semibold text-gray-400">Not Added</p>
-                      <p className="text-xs text-gray-400">No contribution</p>
-                    </div>
-                  )}
-                </div>
-                {canManage && (
-                  <div className="flex space-x-2">
-                    {member.hasContributed ? (
-                      <>
-                        <button
-                          onClick={() => handleEdit(member.contribution)}
-                          className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                          title="Edit contribution"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(member.contribution.id)}
-                          className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                          title="Delete contribution"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setFormData({
-                            memberId: member.id,
-                            amount: '',
-                            notes: ''
-                          });
-                          setIsModalOpen(true);
-                        }}
-                        className="p-1 text-gray-400 hover:text-green-600 transition-colors"
-                        title="Add contribution"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {membersWithContributions.map((member) => (
+                  <tr key={member.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className={`flex-shrink-0 p-2 rounded-lg ${
+                          member.hasContributed ? 'bg-green-100' : 'bg-gray-100'
+                        }`}>
+                          <User className={`w-4 h-4 ${
+                            member.hasContributed ? 'text-green-600' : 'text-gray-400'
+                          }`} />
+                        </div>
+                        <div className="ml-3">
+                          <div className="text-sm font-medium text-gray-900">{member.name}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{member.contact || '-'}</div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      {member.hasContributed ? (
+                        <div className="text-sm font-semibold text-green-600">
+                          ₹{member.contribution.amount?.toLocaleString() || 0}
+                        </div>
+                      ) : (
+                        <div className="text-sm font-medium text-gray-400">Not Added</div>
+                      )}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      {member.hasContributed ? (
+                        <div className="text-sm text-gray-500">
+                          {new Date(member.contribution.createdAt).toLocaleDateString()}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-400">-</div>
+                      )}
+                    </td>
+                    {canManage && (
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          {member.hasContributed ? (
+                            <>
+                              <button
+                                onClick={() => handleEdit(member.contribution)}
+                                className="text-blue-600 hover:text-blue-900 transition-colors"
+                                title="Edit contribution"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(member.contribution.id)}
+                                className="text-red-600 hover:text-red-900 transition-colors"
+                                title="Delete contribution"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setFormData({
+                                  memberId: member.id,
+                                  amount: '',
+                                  notes: ''
+                                });
+                                setIsModalOpen(true);
+                              }}
+                              className="text-green-600 hover:text-green-900 transition-colors"
+                              title="Add contribution"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
                     )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        {/* Mobile List - Individual Cards */}
+        <div className="sm:hidden space-y-3">
+          {membersWithContributions.map((member) => (
+            <div key={member.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    member.hasContributed ? 'bg-green-50' : 'bg-gray-50'
+                  }`}>
+                    <User className={`w-4 h-4 ${
+                      member.hasContributed ? 'text-green-600' : 'text-gray-400'
+                    }`} />
                   </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-900">{member.name}</h3>
+                    <p className="text-xs text-gray-500">{member.contact || 'No contact'}</p>
+                  </div>
+                </div>
+                
+                {member.hasContributed ? (
+                  <div className="text-right">
+                    <div className="text-sm font-semibold text-green-600">
+                      ₹{member.contribution.amount?.toLocaleString() || 0}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {new Date(member.contribution.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-xs text-gray-400 font-medium">Pending</div>
                 )}
               </div>
+              
+              {/* Actions */}
+              {canManage && (
+                <div className="flex space-x-2">
+                  {member.hasContributed ? (
+                    <>
+                      <button
+                        onClick={() => handleEdit(member.contribution)}
+                        className="flex-1 py-2 px-3 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(member.contribution.id)}
+                        className="flex-1 py-2 px-3 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setFormData({
+                          memberId: member.id,
+                          amount: '',
+                          notes: ''
+                        });
+                        setIsModalOpen(true);
+                      }}
+                      className="w-full py-2 px-3 text-sm font-medium text-green-600 bg-green-50 rounded-md hover:bg-green-100 transition-colors"
+                    >
+                      Add Contribution
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
-            {member.hasContributed && member.contribution.notes && (
-              <div className="mt-3 pt-3 border-t border-gray-200">
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">Notes:</span> {member.contribution.notes}
-                </p>
-              </div>
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {members.length === 0 && (
