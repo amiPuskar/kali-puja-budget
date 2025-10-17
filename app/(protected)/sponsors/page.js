@@ -7,9 +7,12 @@ import { subscribeToCollection, addDocument, updateDocument, deleteDocument } fr
 import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import PageHeader from '@/components/PageHeader';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Sponsors() {
   const { sponsors, setSponsors } = useStore();
+  const { isAdmin } = useAuth();
+  const canManage = isAdmin();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSponsor, setEditingSponsor] = useState(null);
   const [formData, setFormData] = useState({
@@ -114,6 +117,7 @@ export default function Sponsors() {
         buttonText="Add Sponsor"
         onButtonClick={() => setIsModalOpen(true)}
         buttonIcon={Plus}
+        showButton={canManage}
       />
 
       {/* Summary Cards */}
@@ -168,22 +172,23 @@ export default function Sponsors() {
       </div>
 
       {/* Pending Sponsors */}
-      <div className="card">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Pending Donations</h3>
+      <div className="space-y-4">
         {pendingSponsors.length === 0 ? (
-          <p className="text-gray-500 text-sm">No pending donations</p>
+          <div className="card">
+            <p className="text-gray-500 text-sm">No pending donations</p>
+          </div>
         ) : (
-          <div className="space-y-4">
-            {pendingSponsors.map((sponsor) => (
-              <div key={sponsor.id} className="flex items-center justify-between p-4 border border-orange-200 bg-orange-50 rounded-lg">
+          pendingSponsors.map((sponsor) => (
+            <div key={sponsor.id} className="card bg-orange-50 border-orange-200">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <button
                     onClick={() => toggleReceivedStatus(sponsor)}
                     className="w-5 h-5 border-2 border-orange-300 rounded hover:border-green-500 transition-colors"
                   />
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900">{sponsor.name}</h4>
-                    <p className="text-sm text-gray-500 capitalize">{sponsor.type}</p>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-lg font-medium text-gray-900 truncate">{sponsor.name}</h4>
+                    <p className="text-sm text-gray-500 capitalize truncate">{sponsor.type}</p>
                     <div className="flex items-center space-x-4 mt-1">
                       <span className="text-sm font-semibold text-green-600">
                         ₹{sponsor.amount?.toLocaleString() || 0}
@@ -193,49 +198,51 @@ export default function Sponsors() {
                           {sponsor.contact}
                         </span>
                       )}
+                      <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded">
+                        Pending
+                      </span>
                     </div>
                     {sponsor.notes && (
-                      <p className="text-xs text-gray-500 mt-1">{sponsor.notes}</p>
+                      <p className="text-xs text-gray-500 mt-1 truncate">{sponsor.notes}</p>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded">
-                    Pending
-                  </span>
-                  <button
-                    onClick={() => handleEdit(sponsor)}
-                    className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(sponsor.id)}
-                    className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                {canManage && (
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleEdit(sponsor)}
+                      className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(sponsor.id)}
+                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
+            </div>
+          ))
         )}
       </div>
 
       {/* Received Sponsors */}
       {receivedSponsors.length > 0 && (
-        <div className="card">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Received Donations</h3>
-          <div className="space-y-4">
-            {receivedSponsors.map((sponsor) => (
-              <div key={sponsor.id} className="flex items-center justify-between p-4 border border-green-200 bg-green-50 rounded-lg">
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium text-gray-900">Received Donations</h3>
+          {receivedSponsors.map((sponsor) => (
+            <div key={sponsor.id} className="card bg-green-50 border-green-200">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div className="w-5 h-5 bg-green-500 rounded flex items-center justify-center">
                     <Gift className="w-3 h-3 text-white" />
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900">{sponsor.name}</h4>
-                    <p className="text-sm text-gray-500 capitalize">{sponsor.type}</p>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-lg font-medium text-gray-900 truncate">{sponsor.name}</h4>
+                    <p className="text-sm text-gray-500 capitalize truncate">{sponsor.type}</p>
                     <div className="flex items-center space-x-4 mt-1">
                       <span className="text-sm font-semibold text-green-600">
                         ₹{sponsor.amount?.toLocaleString() || 0}
@@ -245,37 +252,39 @@ export default function Sponsors() {
                           {sponsor.contact}
                         </span>
                       )}
+                      <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
+                        Received
+                      </span>
                     </div>
                     {sponsor.notes && (
-                      <p className="text-xs text-gray-500 mt-1">{sponsor.notes}</p>
+                      <p className="text-xs text-gray-500 mt-1 truncate">{sponsor.notes}</p>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
-                    Received
-                  </span>
-                  <button
-                    onClick={() => handleEdit(sponsor)}
-                    className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(sponsor.id)}
-                    className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                {canManage && (
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleEdit(sponsor)}
+                      className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(sponsor.id)}
+                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       )}
 
       {/* Modal */}
-      {isModalOpen && (
+      {canManage && isModalOpen && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-10 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3">

@@ -7,6 +7,7 @@ import { subscribeToCollection, addDocument, updateDocument, deleteDocument } fr
 import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import PageHeader from '@/components/PageHeader';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Events() {
   const { 
@@ -20,6 +21,8 @@ export default function Events() {
     setMembers,
     getEventsWithDetails 
   } = useStore();
+  const { isAdmin } = useAuth();
+  const canManage = isAdmin();
   
   const [activeTab, setActiveTab] = useState('events');
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
@@ -276,6 +279,7 @@ export default function Events() {
         buttonText="Add Event"
         onButtonClick={() => setIsEventModalOpen(true)}
         buttonIcon={Plus}
+        showButton={canManage}
       />
 
       {/* Summary Cards */}
@@ -349,6 +353,7 @@ export default function Events() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-medium text-gray-900">Events</h3>
+            {canManage && (
             <button
               onClick={() => setIsEventModalOpen(true)}
               className="btn-primary flex items-center space-x-2"
@@ -356,6 +361,7 @@ export default function Events() {
               <Plus className="w-4 h-4" />
               <span>Add Event</span>
             </button>
+            )}
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -366,20 +372,22 @@ export default function Events() {
                     <h4 className="text-base sm:text-lg font-medium text-gray-900 truncate">{event.name}</h4>
                     <p className="text-sm text-gray-500 truncate">{event.category}</p>
                   </div>
-                  <div className="flex space-x-1 ml-2">
-                    <button
-                      onClick={() => handleEventEdit(event)}
-                      className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleEventDelete(event.id)}
-                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+                  {canManage && (
+                    <div className="flex space-x-1 ml-2">
+                      <button
+                        onClick={() => handleEventEdit(event)}
+                        className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleEventDelete(event.id)}
+                        className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2 text-sm">
@@ -432,13 +440,15 @@ export default function Events() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-medium text-gray-900">Participants</h3>
-            <button
-              onClick={() => setIsParticipantModalOpen(true)}
-              className="btn-primary flex items-center space-x-2"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add Participant</span>
-            </button>
+            {canManage && (
+              <button
+                onClick={() => setIsParticipantModalOpen(true)}
+                className="btn-primary flex items-center space-x-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Participant</span>
+              </button>
+            )}
           </div>
 
           <div className="space-y-4">
@@ -464,20 +474,22 @@ export default function Events() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleParticipantEdit(participant)}
-                        className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleParticipantDelete(participant.id)}
-                        className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                    {canManage && (
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleParticipantEdit(participant)}
+                          className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleParticipantDelete(participant.id)}
+                          className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -499,13 +511,15 @@ export default function Events() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-medium text-gray-900">Prizes</h3>
-            <button
-              onClick={() => setIsPrizeModalOpen(true)}
-              className="btn-primary flex items-center space-x-2"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add Prize</span>
-            </button>
+            {canManage && (
+              <button
+                onClick={() => setIsPrizeModalOpen(true)}
+                className="btn-primary flex items-center space-x-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Prize</span>
+              </button>
+            )}
           </div>
 
           <div className="space-y-4">
@@ -573,7 +587,7 @@ export default function Events() {
       )}
 
       {/* Event Modal */}
-      {isEventModalOpen && (
+            {canManage && isEventModalOpen && (
         <div className="modal">
           <div className="modal-content">
             <div className="mt-3">
@@ -703,7 +717,7 @@ export default function Events() {
       )}
 
       {/* Participant Modal */}
-      {isParticipantModalOpen && (
+            {canManage && isParticipantModalOpen && (
         <div className="modal">
           <div className="modal-content">
             <div className="mt-3">
@@ -804,7 +818,7 @@ export default function Events() {
       )}
 
       {/* Prize Modal */}
-      {isPrizeModalOpen && (
+            {canManage && isPrizeModalOpen && (
         <div className="modal">
           <div className="modal-content">
             <div className="mt-3">

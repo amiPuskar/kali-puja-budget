@@ -2,13 +2,16 @@ import { create } from 'zustand';
 
 const useStore = create((set, get) => ({
   // State
-  members: [],
+  members: [], // Club members (not puja-specific)
+  pendingMembers: [], // Pending member registrations
+  contributions: [], // Member contributions per puja
   expenses: [],
   volunteers: [],
   tasks: [],
   inventory: [],
   sponsors: [],
-  budget: [],
+  budgetItems: [], // Default budget items (not puja-specific)
+  budgetAllocations: [], // Puja-specific budget allocations
   events: [],
   participants: [],
   prizes: [],
@@ -17,12 +20,15 @@ const useStore = create((set, get) => ({
 
   // Actions
   setMembers: (members) => set({ members }),
+  setPendingMembers: (pendingMembers) => set({ pendingMembers }),
+  setContributions: (contributions) => set({ contributions }),
   setExpenses: (expenses) => set({ expenses }),
   setVolunteers: (volunteers) => set({ volunteers }),
   setTasks: (tasks) => set({ tasks }),
   setInventory: (inventory) => set({ inventory }),
   setSponsors: (sponsors) => set({ sponsors }),
-  setBudget: (budget) => set({ budget }),
+  setBudgetItems: (budgetItems) => set({ budgetItems }),
+  setBudgetAllocations: (budgetAllocations) => set({ budgetAllocations }),
   setEvents: (events) => set({ events }),
   setParticipants: (participants) => set({ participants }),
   setPrizes: (prizes) => set({ prizes }),
@@ -31,8 +37,8 @@ const useStore = create((set, get) => ({
 
   // Computed values
   getTotalCollected: () => {
-    const members = get().members;
-    return members.reduce((total, member) => total + (member.contribution || 0), 0);
+    const contributions = get().contributions;
+    return contributions.reduce((total, contribution) => total + (contribution.amount || 0), 0);
   },
 
   getTotalSpent: () => {
@@ -72,13 +78,57 @@ const useStore = create((set, get) => ({
   },
 
   getTotalBudget: () => {
-    const budget = get().budget;
-    return budget.reduce((total, item) => total + (item.allocatedAmount || 0), 0);
+    const budgetAllocations = get().budgetAllocations;
+    return budgetAllocations.reduce((total, allocation) => total + (allocation.allocatedAmount || 0), 0);
   },
 
   getBudgetCategories: () => {
-    const budget = get().budget;
-    return budget.map(item => item.name);
+    const budgetItems = get().budgetItems;
+    return budgetItems.map(item => item.name);
+  },
+
+  // New budget helper functions
+  getBudgetItems: () => {
+    return get().budgetItems;
+  },
+
+  getBudgetAllocationsForPuja: (pujaId) => {
+    const budgetAllocations = get().budgetAllocations;
+    return budgetAllocations.filter(allocation => allocation.pujaId === pujaId);
+  },
+
+  getBudgetItemAllocation: (budgetItemId, pujaId) => {
+    const budgetAllocations = get().budgetAllocations;
+    return budgetAllocations.find(allocation => 
+      allocation.budgetItemId === budgetItemId && allocation.pujaId === pujaId
+    );
+  },
+
+  getTotalAllocatedForPuja: (pujaId) => {
+    const budgetAllocations = get().budgetAllocations;
+    return budgetAllocations
+      .filter(allocation => allocation.pujaId === pujaId)
+      .reduce((total, allocation) => total + (allocation.allocatedAmount || 0), 0);
+  },
+
+  // New helper functions for contributions
+  getContributionsByMember: (memberId) => {
+    const contributions = get().contributions;
+    return contributions.filter(contribution => contribution.memberId === memberId);
+  },
+
+  getMemberContributionForPuja: (memberId, pujaId) => {
+    const contributions = get().contributions;
+    return contributions.find(contribution => 
+      contribution.memberId === memberId && contribution.pujaId === pujaId
+    );
+  },
+
+  getTotalContributionByMember: (memberId) => {
+    const contributions = get().contributions;
+    return contributions
+      .filter(contribution => contribution.memberId === memberId)
+      .reduce((total, contribution) => total + (contribution.amount || 0), 0);
   },
 
   getEventsWithDetails: () => {
@@ -110,12 +160,15 @@ const useStore = create((set, get) => ({
   // Clear all data
   clearAll: () => set({
     members: [],
+    pendingMembers: [],
+    contributions: [],
     expenses: [],
     volunteers: [],
     tasks: [],
     inventory: [],
     sponsors: [],
-    budget: [],
+    budgetItems: [],
+    budgetAllocations: [],
     events: [],
     participants: [],
     prizes: [],

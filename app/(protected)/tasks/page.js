@@ -7,9 +7,12 @@ import { subscribeToCollection, addDocument, updateDocument, deleteDocument } fr
 import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import PageHeader from '@/components/PageHeader';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Tasks() {
   const { tasks, volunteers, setTasks, setVolunteers } = useStore();
+  const { isAdmin } = useAuth();
+  const canManage = isAdmin();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [formData, setFormData] = useState({
@@ -119,6 +122,7 @@ export default function Tasks() {
         buttonText="Add Task"
         onButtonClick={() => setIsModalOpen(true)}
         buttonIcon={Plus}
+        showButton={canManage}
       />
 
       {/* Summary Cards */}
@@ -161,22 +165,23 @@ export default function Tasks() {
       </div>
 
       {/* Pending Tasks */}
-      <div className="card">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Pending Tasks</h3>
+      <div className="space-y-4">
         {pendingTasks.length === 0 ? (
-          <p className="text-gray-500 text-sm">No pending tasks</p>
+          <div className="card">
+            <p className="text-gray-500 text-sm">No pending tasks</p>
+          </div>
         ) : (
-          <div className="space-y-4">
-            {pendingTasks.map((task) => (
-              <div key={task.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+          pendingTasks.map((task) => (
+            <div key={task.id} className="card">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <button
                     onClick={() => toggleTaskStatus(task)}
                     className="w-5 h-5 border-2 border-gray-300 rounded hover:border-green-500 transition-colors"
                   />
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900">{task.title}</h4>
-                    <p className="text-sm text-gray-500">{task.description}</p>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-lg font-medium text-gray-900 truncate">{task.title}</h4>
+                    <p className="text-sm text-gray-500 truncate">{task.description}</p>
                     <div className="flex items-center space-x-4 mt-1">
                       {task.assignedTo && (
                         <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
@@ -186,46 +191,48 @@ export default function Tasks() {
                       <span className="text-xs text-gray-500">
                         Due: {new Date(task.dueDate).toLocaleDateString()}
                       </span>
+                      <span className={`text-xs px-2 py-1 rounded ${getPriorityColor(task.priority)}`}>
+                        {task.priority}
+                      </span>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className={`text-xs px-2 py-1 rounded ${getPriorityColor(task.priority)}`}>
-                    {task.priority}
-                  </span>
-                  <button
-                    onClick={() => handleEdit(task)}
-                    className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(task.id)}
-                    className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                {canManage && (
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleEdit(task)}
+                      className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(task.id)}
+                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
+            </div>
+          ))
         )}
       </div>
 
       {/* Completed Tasks */}
       {completedTasks.length > 0 && (
-        <div className="card">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Completed Tasks</h3>
-          <div className="space-y-4">
-            {completedTasks.map((task) => (
-              <div key={task.id} className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium text-gray-900">Completed Tasks</h3>
+          {completedTasks.map((task) => (
+            <div key={task.id} className="card bg-green-50 border-green-200">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div className="w-5 h-5 bg-green-500 rounded flex items-center justify-center">
                     <CheckSquare className="w-3 h-3 text-white" />
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900 line-through">{task.title}</h4>
-                    <p className="text-sm text-gray-500">{task.description}</p>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-lg font-medium text-gray-900 line-through truncate">{task.title}</h4>
+                    <p className="text-sm text-gray-500 truncate">{task.description}</p>
                     {task.assignedTo && (
                       <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded mt-1 inline-block">
                         {task.assignedTo}
@@ -233,28 +240,30 @@ export default function Tasks() {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => handleEdit(task)}
-                    className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(task.id)}
-                    className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                {canManage && (
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleEdit(task)}
+                      className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(task.id)}
+                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       )}
 
       {/* Modal */}
-      {isModalOpen && (
+      {canManage && isModalOpen && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-10 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3">

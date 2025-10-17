@@ -26,23 +26,31 @@ export default function ToastHost() {
   }, []);
 
   return (
-    <div className="fixed top-2 right-2 z-[100] w-full max-w-sm px-2 space-y-2 pointer-events-none">
+    <div className="fixed top-4 right-4 z-[100] w-full max-w-sm space-y-3 pointer-events-none">
       {toasts.map((t) => (
         <div
           key={t.id}
-          className={`text-white rounded-lg shadow-lg px-4 py-3 flex items-start pointer-events-auto animate-slide-in ${
+          className={`text-white rounded-xl shadow-lg px-4 py-3 flex items-start pointer-events-auto animate-slide-up backdrop-blur-sm ${
             typeStyles[t.type] || typeStyles.info
           }`}
         >
-          <div className="flex-1 text-sm">{t.message}</div>
+          <div className="flex-1 text-sm font-medium">{t.message}</div>
         </div>
       ))}
       <style jsx>{`
-        @keyframes slide-in {
-          from { opacity: 0; transform: translateY(-8px); }
-          to { opacity: 1; transform: translateY(0); }
+        @keyframes slide-up {
+          from { 
+            opacity: 0; 
+            transform: translateY(-10px) scale(0.95); 
+          }
+          to { 
+            opacity: 1; 
+            transform: translateY(0) scale(1); 
+          }
         }
-        .animate-slide-in { animation: slide-in 160ms ease-out; }
+        .animate-slide-up { 
+          animation: slide-up 200ms ease-out; 
+        }
       `}</style>
     </div>
   );

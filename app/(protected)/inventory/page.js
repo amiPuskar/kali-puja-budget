@@ -7,9 +7,12 @@ import { subscribeToCollection, addDocument, updateDocument, deleteDocument } fr
 import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import PageHeader from '@/components/PageHeader';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Inventory() {
   const { inventory, setInventory } = useStore();
+  const { isAdmin } = useAuth();
+  const canManage = isAdmin();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({
@@ -122,6 +125,7 @@ export default function Inventory() {
         buttonText="Add Item"
         onButtonClick={() => setIsModalOpen(true)}
         buttonIcon={Plus}
+        showButton={canManage}
       />
 
       {/* Summary Cards */}
@@ -176,22 +180,23 @@ export default function Inventory() {
       </div>
 
       {/* Pending Items */}
-      <div className="card">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Pending Items</h3>
+      <div className="space-y-4">
         {pendingItems.length === 0 ? (
-          <p className="text-gray-500 text-sm">All items have been received</p>
+          <div className="card">
+            <p className="text-gray-500 text-sm">All items have been received</p>
+          </div>
         ) : (
-          <div className="space-y-4">
-            {pendingItems.map((item) => (
-              <div key={item.id} className="flex items-center justify-between p-4 border border-orange-200 bg-orange-50 rounded-lg">
+          pendingItems.map((item) => (
+            <div key={item.id} className="card bg-orange-50 border-orange-200">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <button
                     onClick={() => toggleReceivedStatus(item)}
                     className="w-5 h-5 border-2 border-orange-300 rounded hover:border-green-500 transition-colors"
                   />
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900">{item.name}</h4>
-                    <p className="text-sm text-gray-500">{item.category}</p>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-lg font-medium text-gray-900 truncate">{item.name}</h4>
+                    <p className="text-sm text-gray-500 truncate">{item.category}</p>
                     <div className="flex items-center space-x-4 mt-1">
                       <span className="text-xs text-gray-600">
                         Qty: {item.quantity} {item.unit}
@@ -201,49 +206,51 @@ export default function Inventory() {
                           Est. ₹{item.estimatedCost.toLocaleString()}
                         </span>
                       )}
+                      <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded">
+                        Pending
+                      </span>
                     </div>
                     {item.notes && (
-                      <p className="text-xs text-gray-500 mt-1">{item.notes}</p>
+                      <p className="text-xs text-gray-500 mt-1 truncate">{item.notes}</p>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded">
-                    Pending
-                  </span>
-                  <button
-                    onClick={() => handleEdit(item)}
-                    className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                {canManage && (
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleEdit(item)}
+                      className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
+            </div>
+          ))
         )}
       </div>
 
       {/* Received Items */}
       {receivedItems.length > 0 && (
-        <div className="card">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Received Items</h3>
-          <div className="space-y-4">
-            {receivedItems.map((item) => (
-              <div key={item.id} className="flex items-center justify-between p-4 border border-green-200 bg-green-50 rounded-lg">
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium text-gray-900">Received Items</h3>
+          {receivedItems.map((item) => (
+            <div key={item.id} className="card bg-green-50 border-green-200">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div className="w-5 h-5 bg-green-500 rounded flex items-center justify-center">
                     <CheckCircle className="w-3 h-3 text-white" />
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900">{item.name}</h4>
-                    <p className="text-sm text-gray-500">{item.category}</p>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-lg font-medium text-gray-900 truncate">{item.name}</h4>
+                    <p className="text-sm text-gray-500 truncate">{item.category}</p>
                     <div className="flex items-center space-x-4 mt-1">
                       <span className="text-xs text-gray-600">
                         Qty: {item.quantity} {item.unit}
@@ -253,37 +260,39 @@ export default function Inventory() {
                           Est. ₹{item.estimatedCost.toLocaleString()}
                         </span>
                       )}
+                      <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
+                        Received
+                      </span>
                     </div>
                     {item.notes && (
-                      <p className="text-xs text-gray-500 mt-1">{item.notes}</p>
+                      <p className="text-xs text-gray-500 mt-1 truncate">{item.notes}</p>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
-                    Received
-                  </span>
-                  <button
-                    onClick={() => handleEdit(item)}
-                    className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                {canManage && (
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleEdit(item)}
+                      className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       )}
 
       {/* Modal */}
-      {isModalOpen && (
+      {canManage && isModalOpen && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-10 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3">

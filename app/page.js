@@ -1,51 +1,77 @@
 'use client';
 
 import { useEffect } from 'react';
-import { DollarSign, TrendingUp, TrendingDown, Users, CheckSquare, Package, Calendar, Gift, Trophy } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { PujaProvider } from '@/contexts/PujaContext';
+import LayoutWrapper from '@/components/LayoutWrapper';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import { DollarSign, TrendingUp, TrendingDown, Users, CheckSquare, Package, Calendar, Gift, Trophy, UserCheck, Receipt, Target } from 'lucide-react';
 import useStore from '@/store/useStore';
 import { subscribeToCollection } from '@/lib/firebase';
 import { COLLECTIONS } from '@/lib/firebase';
-import PageHeader from '@/components/PageHeader';
+import { usePuja } from '@/contexts/PujaContext';
+import { useAuth } from '@/contexts/AuthContext';
+import Link from 'next/link';
 
-export default function Dashboard() {
+function DashboardContent() {
   const { 
     members, 
+    contributions,
     expenses, 
     tasks, 
     inventory, 
     sponsors, 
-    events,
-    participants,
+    events, 
+    participants, 
     prizes,
+    budgetAllocations,
     setMembers, 
+    setContributions,
     setExpenses, 
     setTasks, 
     setInventory, 
-    setSponsors,
-    setEvents,
-    setParticipants,
+    setSponsors, 
+    setEvents, 
+    setParticipants, 
     setPrizes,
-    getTotalCollected,
-    getTotalSpent,
-    getRemainingBalance,
-    getUpcomingTasks,
-    getPendingItems,
-    getTotalDonations
+    setBudgetAllocations,
+    getTotalCollected, 
+    getTotalSpent, 
+    getRemainingBalance, 
+    getUpcomingTasks, 
+    getPendingItems, 
+    getTotalDonations,
+    getTotalAllocatedForPuja
   } = useStore();
 
+  const { currentPuja } = usePuja();
+  const { user, isAdmin } = useAuth();
+
   useEffect(() => {
-    // Subscribe to real-time updates
+    // Subscribe to club members (not puja-specific)
     const unsubscribeMembers = subscribeToCollection(COLLECTIONS.MEMBERS, setMembers);
-    const unsubscribeExpenses = subscribeToCollection(COLLECTIONS.EXPENSES, setExpenses);
-    const unsubscribeTasks = subscribeToCollection(COLLECTIONS.TASKS, setTasks);
-    const unsubscribeInventory = subscribeToCollection(COLLECTIONS.INVENTORY, setInventory);
-    const unsubscribeSponsors = subscribeToCollection(COLLECTIONS.SPONSORS, setSponsors);
-    const unsubscribeEvents = subscribeToCollection(COLLECTIONS.EVENTS, setEvents);
-    const unsubscribeParticipants = subscribeToCollection(COLLECTIONS.PARTICIPANTS, setParticipants);
-    const unsubscribePrizes = subscribeToCollection(COLLECTIONS.PRIZES, setPrizes);
+    
+    if (!currentPuja) {
+      return () => {
+        unsubscribeMembers();
+      };
+    }
+
+    // Subscribe to puja-specific data
+    const unsubscribeContributions = subscribeToCollection(`${COLLECTIONS.CONTRIBUTIONS}_${currentPuja.id}`, setContributions);
+    const unsubscribeExpenses = subscribeToCollection(`${COLLECTIONS.EXPENSES}_${currentPuja.id}`, setExpenses);
+    const unsubscribeTasks = subscribeToCollection(`${COLLECTIONS.TASKS}_${currentPuja.id}`, setTasks);
+    const unsubscribeInventory = subscribeToCollection(`${COLLECTIONS.INVENTORY}_${currentPuja.id}`, setInventory);
+    const unsubscribeSponsors = subscribeToCollection(`${COLLECTIONS.SPONSORS}_${currentPuja.id}`, setSponsors);
+    const unsubscribeEvents = subscribeToCollection(`${COLLECTIONS.EVENTS}_${currentPuja.id}`, setEvents);
+    const unsubscribeParticipants = subscribeToCollection(`${COLLECTIONS.PARTICIPANTS}_${currentPuja.id}`, setParticipants);
+    const unsubscribePrizes = subscribeToCollection(`${COLLECTIONS.PRIZES}_${currentPuja.id}`, setPrizes);
+    const unsubscribeBudgetAllocations = subscribeToCollection(`${COLLECTIONS.BUDGET_ALLOCATIONS}_${currentPuja.id}`, setBudgetAllocations);
 
     return () => {
       unsubscribeMembers();
+      unsubscribeContributions();
       unsubscribeExpenses();
       unsubscribeTasks();
       unsubscribeInventory();
@@ -53,8 +79,9 @@ export default function Dashboard() {
       unsubscribeEvents();
       unsubscribeParticipants();
       unsubscribePrizes();
+      unsubscribeBudgetAllocations();
     };
-  }, [setMembers, setExpenses, setTasks, setInventory, setSponsors, setEvents, setParticipants, setPrizes]);
+  }, [currentPuja, setMembers, setContributions, setExpenses, setTasks, setInventory, setSponsors, setEvents, setParticipants, setPrizes, setBudgetAllocations]);
 
   const totalCollected = getTotalCollected();
   const totalSpent = getTotalSpent();
@@ -116,19 +143,27 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-6 sm:space-y-8">
-      <PageHeader
-        title="Dashboard"
-        description="Overview of your Puja budget and expenses"
-        showButton={false}
-      />
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-sm text-gray-600 mt-1">
+            {currentPuja ? `${currentPuja.name} - Overview` : 'Overview of your Puja budget and expenses'}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-sm text-gray-500">Last updated</p>
+          <p className="text-sm font-medium text-gray-900">{new Date().toLocaleDateString()}</p>
+        </div>
+      </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <div key={stat.name} className="card">
+            <div key={stat.name} className="card hover:shadow-md transition-shadow">
               <div className="flex items-center">
                 <div className={`flex-shrink-0 p-3 rounded-lg ${stat.bgColor} mr-4`}>
                   <Icon className={`w-6 h-6 ${stat.color}`} />
@@ -143,46 +178,150 @@ export default function Dashboard() {
         })}
       </div>
 
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
-        {/* Recent Members */}
+      {/* Financial Overview */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Budget vs Expenses Chart */}
         <div className="card">
-          <h3 className="text-sm sm:text-base lg:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Recent Members</h3>
-          {members.length === 0 ? (
-            <p className="text-gray-500 text-xs sm:text-sm">No members added yet</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Budget vs Expenses</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Total Budget</span>
+              <span className="text-sm font-medium text-gray-900">₹{totalCollected.toLocaleString()}</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-blue-500 h-2 rounded-full" 
+                style={{ width: '100%' }}
+              ></div>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Total Spent</span>
+              <span className="text-sm font-medium text-gray-900">₹{totalSpent.toLocaleString()}</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-red-500 h-2 rounded-full" 
+                style={{ width: `${totalCollected > 0 ? (totalSpent / totalCollected) * 100 : 0}%` }}
+              ></div>
+            </div>
+            
+            <div className="flex items-center justify-between pt-2 border-t">
+              <span className="text-sm font-medium text-gray-900">Remaining</span>
+              <span className={`text-sm font-semibold ${remainingBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                ₹{remainingBalance.toLocaleString()}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="card">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+          <div className="grid grid-cols-2 gap-3">
+            {isAdmin() ? (
+              <>
+                <Link href="/contributions" className="p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                  <UserCheck className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-blue-900 text-center">Add Contribution</p>
+                </Link>
+                <Link href="/expenses" className="p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
+                  <Receipt className="w-6 h-6 text-red-600 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-red-900 text-center">Add Expense</p>
+                </Link>
+                <Link href="/budget" className="p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                  <Target className="w-6 h-6 text-green-600 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-green-900 text-center">Budget Allocation</p>
+                </Link>
+                <Link href="/events" className="p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+                  <Calendar className="w-6 h-6 text-purple-600 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-purple-900 text-center">Add Event</p>
+                </Link>
+              </>
+            ) : (
+              <div className="col-span-2 text-center py-8">
+                <p className="text-gray-500">Welcome, {user?.name}! View your dashboard below.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {/* Recent Contributions */}
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Recent Contributions</h3>
+            {isAdmin() && (
+              <Link href="/contributions" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                View all
+              </Link>
+            )}
+          </div>
+          {contributions.length === 0 ? (
+            <div className="text-center py-8">
+              <UserCheck className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+              <p className="text-gray-500 text-sm">No contributions yet</p>
+            </div>
           ) : (
-            <div className="space-y-2 sm:space-y-3">
-              {members.slice(0, 5).map((member) => (
-                <div key={member.id} className="flex items-center justify-between">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">{member.name}</p>
-                    <p className="text-xs text-gray-500 truncate">{member.role}</p>
+            <div className="space-y-3">
+              {contributions.slice(0, 5).map((contribution) => {
+                const member = members.find(m => m.id === contribution.memberId);
+                return (
+                  <div key={contribution.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <UserCheck className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{member?.name || 'Unknown Member'}</p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(contribution.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-sm font-semibold text-green-600">
+                      ₹{contribution.amount?.toLocaleString() || 0}
+                    </span>
                   </div>
-                  <span className="text-xs font-medium text-green-600 ml-2 flex-shrink-0">
-                    ₹{member.contribution?.toLocaleString() || 0}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
 
         {/* Recent Expenses */}
         <div className="card">
-          <h3 className="text-sm sm:text-base lg:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Recent Expenses</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Recent Expenses</h3>
+            {isAdmin() && (
+              <Link href="/expenses" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                View all
+              </Link>
+            )}
+          </div>
           {expenses.length === 0 ? (
-            <p className="text-gray-500 text-xs sm:text-sm">No expenses recorded yet</p>
+            <div className="text-center py-8">
+              <Receipt className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+              <p className="text-gray-500 text-sm">No expenses recorded yet</p>
+            </div>
           ) : (
-            <div className="space-y-2 sm:space-y-3">
+            <div className="space-y-3">
               {expenses.slice(0, 5).map((expense) => (
-                <div key={expense.id} className="flex items-center justify-between">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">{expense.description}</p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(expense.createdAt).toLocaleDateString()}
-                    </p>
+                <div key={expense.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                      <Receipt className="w-4 h-4 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{expense.description}</p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(expense.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                  <span className="text-xs font-medium text-red-600 ml-2 flex-shrink-0">
+                  <span className="text-sm font-semibold text-red-600">
                     ₹{expense.amount?.toLocaleString() || 0}
                   </span>
                 </div>
@@ -193,20 +332,35 @@ export default function Dashboard() {
 
         {/* Upcoming Tasks */}
         <div className="card">
-          <h3 className="text-sm sm:text-base lg:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Upcoming Tasks</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Upcoming Tasks</h3>
+            {isAdmin() && (
+              <Link href="/tasks" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                View all
+              </Link>
+            )}
+          </div>
           {upcomingTasks.length === 0 ? (
-            <p className="text-gray-500 text-xs sm:text-sm">No upcoming tasks</p>
+            <div className="text-center py-8">
+              <CheckSquare className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+              <p className="text-gray-500 text-sm">No upcoming tasks</p>
+            </div>
           ) : (
-            <div className="space-y-2 sm:space-y-3">
+            <div className="space-y-3">
               {upcomingTasks.slice(0, 5).map((task) => (
-                <div key={task.id} className="flex items-center justify-between">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">{task.title}</p>
-                    <p className="text-xs text-gray-500">
-                      Due: {new Date(task.dueDate).toLocaleDateString()}
-                    </p>
+                <div key={task.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                      <CheckSquare className="w-4 h-4 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{task.title}</p>
+                      <p className="text-xs text-gray-500">
+                        Due: {new Date(task.dueDate).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                  <span className={`text-xs px-1 sm:px-2 py-1 rounded ml-2 flex-shrink-0 ${
+                  <span className={`text-xs px-2 py-1 rounded font-medium ${
                     task.priority === 'high' ? 'bg-red-100 text-red-600' :
                     task.priority === 'medium' ? 'bg-yellow-100 text-yellow-600' :
                     'bg-green-100 text-green-600'
@@ -218,53 +372,21 @@ export default function Dashboard() {
             </div>
           )}
         </div>
-
-        {/* Pending Items */}
-        <div className="card">
-          <h3 className="text-sm sm:text-base lg:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Pending Items</h3>
-          {pendingItems.length === 0 ? (
-            <p className="text-gray-500 text-xs sm:text-sm">All items received</p>
-          ) : (
-            <div className="space-y-2 sm:space-y-3">
-              {pendingItems.slice(0, 5).map((item) => (
-                <div key={item.id} className="flex items-center justify-between">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">{item.name}</p>
-                    <p className="text-xs text-gray-500 truncate">{item.category}</p>
-                  </div>
-                  <span className="text-xs text-orange-600 bg-orange-100 px-1 sm:px-2 py-1 rounded ml-2 flex-shrink-0">
-                    Pending
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Recent Events */}
-        <div className="card">
-          <h3 className="text-sm sm:text-base lg:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Recent Events</h3>
-          {events.length === 0 ? (
-            <p className="text-gray-500 text-xs sm:text-sm">No events scheduled yet</p>
-          ) : (
-            <div className="space-y-2 sm:space-y-3">
-              {events.slice(0, 5).map((event) => (
-                <div key={event.id} className="flex items-center justify-between">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">{event.name}</p>
-                    <p className="text-xs text-gray-500 truncate">
-                      {new Date(event.date).toLocaleDateString()} • {event.category}
-                    </p>
-                  </div>
-                  <span className="text-xs text-pink-600 bg-pink-100 px-1 sm:px-2 py-1 rounded ml-2 flex-shrink-0">
-                    {participants.filter(p => p.eventId === event.id).length} participants
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <AuthProvider>
+      <PujaProvider>
+        <LayoutWrapper>
+          <ProtectedRoute>
+            <DashboardContent />
+          </ProtectedRoute>
+        </LayoutWrapper>
+      </PujaProvider>
+    </AuthProvider>
   );
 }
