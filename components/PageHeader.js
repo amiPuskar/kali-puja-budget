@@ -26,10 +26,10 @@ const PageHeader = ({
         </div>
         
         {showButton && (
-          <div className="flex-shrink-0">
+          <div className="w-full sm:w-auto sm:flex-shrink-0">
             <button
               onClick={onButtonClick}
-              className="btn-primary flex items-center space-x-2"
+              className="btn-primary w-full sm:w-auto flex items-center justify-center space-x-2"
             >
               <ButtonIcon className="w-4 h-4" />
               <span>{buttonText}</span>
