@@ -10,6 +10,7 @@ import { usePuja } from '@/contexts/PujaContext';
 import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import SummaryCard from '@/components/SummaryCard';
 
 export default function Pujas() {
   const { members, setMembers } = useStore();
@@ -155,25 +156,24 @@ export default function Pujas() {
       />
 
       {/* Summary Card */}
-      <div className="card">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center space-x-3">
-            <div className="flex-shrink-0 p-2 sm:p-3 bg-blue-100 rounded-lg">
-              <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Pujas</p>
-              <p className="text-xl sm:text-2xl font-semibold text-gray-900">{pujas.length}</p>
-            </div>
-          </div>
-          <div className="text-left sm:text-right">
-            <p className="text-sm font-medium text-gray-600">Active Pujas</p>
-            <p className="text-xl sm:text-2xl font-semibold text-gray-900">
-              {pujas.filter(p => p.status === 'active').length}
-            </p>
-          </div>
-        </div>
-      </div>
+      <SummaryCard
+        items={[
+          {
+            icon: Calendar,
+            label: 'Total Pujas',
+            value: pujas.length.toString(),
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-100'
+          },
+          {
+            icon: Calendar,
+            label: 'Active Pujas',
+            value: pujas.filter(p => p.status === 'active').length.toString(),
+            color: 'text-green-600',
+            bgColor: 'bg-green-100'
+          }
+        ]}
+      />
 
       {/* Pujas List */}
       <div className="space-y-4">
@@ -181,15 +181,15 @@ export default function Pujas() {
           const manager = members.find(m => m.id === puja.managerId);
           return (
             <div key={puja.id} className="card">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="flex-shrink-0 p-3 bg-blue-100 rounded-lg">
-                    <Calendar className="w-6 h-6 text-blue-600" />
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-start space-x-3 min-w-0 flex-1">
+                  <div className="flex-shrink-0 p-2 bg-blue-100 rounded-lg">
+                    <Calendar className="w-5 h-5 text-blue-600" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <h3 className="text-lg font-medium text-gray-900 truncate">{puja.name}</h3>
                     <p className="text-sm text-gray-500 truncate">{puja.description}</p>
-                    <div className="flex items-center space-x-4 mt-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mt-2 space-y-2 sm:space-y-0">
                       <span className="text-xs text-gray-600">
                         {puja.year}
                       </span>
@@ -199,36 +199,41 @@ export default function Pujas() {
                         </span>
                       )}
                       {manager && (
-                        <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                        <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded inline-block w-fit">
                           Manager: {manager.name}
                         </span>
                       )}
-                      <span className={`text-xs px-2 py-1 rounded flex items-center space-x-1 ${getStatusColor(puja.status)}`}>
+                      <span className={`text-xs px-2 py-1 rounded flex items-center space-x-1 w-fit ${getStatusColor(puja.status)}`}>
                         {getStatusIcon(puja.status)}
                         <span>{puja.status}</span>
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex space-x-1 sm:ml-2">
                   <button
                     onClick={() => handleSwitchPuja(puja)}
-                    className="p-1 text-gray-400 hover:text-green-600 transition-colors"
+                    className="flex-1 sm:flex-none p-2 sm:p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors flex items-center justify-center sm:justify-start"
                     title="Switch to this puja"
                   >
                     <CheckCircle className="w-4 h-4" />
+                    <span className="ml-2 sm:hidden text-sm">Switch</span>
                   </button>
                   <button
                     onClick={() => handleEdit(puja)}
-                    className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                    className="flex-1 sm:flex-none p-2 sm:p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors flex items-center justify-center sm:justify-start"
+                    title="Edit puja"
                   >
                     <Edit2 className="w-4 h-4" />
+                    <span className="ml-2 sm:hidden text-sm">Edit</span>
                   </button>
                   <button
                     onClick={() => handleDelete(puja.id)}
-                    className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                    className="flex-1 sm:flex-none p-2 sm:p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors flex items-center justify-center sm:justify-start"
+                    title="Delete puja"
                   >
                     <Trash2 className="w-4 h-4" />
+                    <span className="ml-2 sm:hidden text-sm">Delete</span>
                   </button>
                 </div>
               </div>

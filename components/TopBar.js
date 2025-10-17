@@ -151,7 +151,7 @@ const TopBar = ({ onMenuClick, isMenuOpen }) => {
 
             {/* Profile Dropdown Menu */}
             {showProfileMenu && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+              <div className="absolute right-0 mt-2 w-56 sm:w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                 <div className="py-2">
                   {/* User Info */}
                   <div className="px-4 py-2 border-b border-gray-200">
