@@ -60,13 +60,8 @@ const Sidebar = ({ isOpen, onClose }) => {
         <div className="flex flex-col h-full">
           {/* Header with title */}
           <div className="px-4 py-6 border-b border-gray-200">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-sm">PB</span>
-              </div>
-              <div className="min-w-0">
-                <h1 className="text-lg font-bold text-gray-900">New Kalimata Boys Club</h1>
-              </div>
+            <div className="text-center">
+              <h1 className="text-xl font-bold text-gray-900">New Kalimata Boys Club</h1>
             </div>
           </div>
 

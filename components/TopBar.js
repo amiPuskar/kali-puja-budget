@@ -1,22 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { Bell, User, LogOut, Menu, X, ChevronDown, Calendar } from 'lucide-react';
+import { User, Menu, X, ChevronDown, Calendar } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePuja } from '@/contexts/PujaContext';
-import { getAccessLevelDisplayName } from '@/lib/roles';
 
 const TopBar = ({ onMenuClick, isMenuOpen }) => {
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
   const [showPujaSelector, setShowPujaSelector] = useState(false);
   
-  const { user, logout, forceRefreshUserRole } = useAuth();
+  const { user } = useAuth();
   const { currentPuja, pujas, switchPuja } = usePuja();
 
-  const handleLogout = () => {
-    logout();
-  };
 
   const notifications = [
     { id: 1, message: 'New member added', time: '2 min ago', type: 'info' },
@@ -49,13 +43,8 @@ const TopBar = ({ onMenuClick, isMenuOpen }) => {
                 className="flex items-center space-x-2 px-3 py-2 bg-primary-50 hover:bg-primary-100 border border-primary-200 rounded-lg transition-colors min-w-0"
               >
                 <Calendar className="w-4 h-4 text-primary-600 flex-shrink-0" />
-                <div className="text-left min-w-0 flex-1">
-                  <div className="text-sm font-medium text-primary-900 truncate">
-                    {currentPuja.name}
-                  </div>
-                  <div className="text-xs text-primary-600 truncate">
-                    {currentPuja.year}
-                  </div>
+                <div className="text-sm font-medium text-primary-900 truncate">
+                  {currentPuja.name}
                 </div>
                 <ChevronDown className="w-4 h-4 text-primary-600 flex-shrink-0" />
               </button>
@@ -108,73 +97,24 @@ const TopBar = ({ onMenuClick, isMenuOpen }) => {
         {/* Right side - Profile, Logout */}
         <div className="flex items-center space-x-1 sm:space-x-2">
 
-          {/* Profile */}
-          <div className="relative">
-            <button
-              onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="flex items-center space-x-2 p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
-            >
-              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
-                <User className="w-4 h-4" />
-              </div>
-              <div className="hidden sm:block text-left">
-                <p className="text-sm font-medium truncate">{user?.name || 'User'}</p>
-                <p className="text-xs text-gray-500 capitalize">{getAccessLevelDisplayName(user?.role)}</p>
-                <p className="text-xs text-gray-400">DB: {user?.originalRole}</p>
-              </div>
-            </button>
-
-            {/* Profile dropdown */}
-            {showProfileMenu && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 z-50">
-                <div className="p-4 border-b border-gray-200">
-                  <p className="text-sm font-medium text-gray-900">{user?.name || 'User'}</p>
-                  <p className="text-xs text-gray-500">{user?.email}</p>
-                  <span className="inline-block mt-1 text-xs px-2 py-1 bg-primary-100 text-primary-700 rounded">
-                    {user?.role?.replace('_', ' ').toUpperCase()}
-                  </span>
-                </div>
-                <div className="py-2">
-                  <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors" onClick={() => window.location.assign('/profile')}>
-                    Profile Settings
-                  </button>
-                </div>
-                <div className="border-t border-gray-200 py-2">
-                  <button
-                    onClick={() => {
-                      const success = forceRefreshUserRole();
-                      if (success) {
-                        alert('User role refreshed! Page will reload.');
-                        window.location.reload();
-                      } else {
-                        alert('No user data found to refresh.');
-                      }
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors flex items-center space-x-2"
-                  >
-                    <span>🔄</span>
-                    <span>Fix Role Issue</span>
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center space-x-2"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Logout</span>
-                  </button>
-                </div>
-              </div>
-            )}
+          {/* Profile - Simple Display */}
+          <div className="flex items-center space-x-2 p-2">
+            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+              <User className="w-4 h-4" />
+            </div>
+            <div className="hidden sm:block text-left">
+              <p className="text-sm font-medium truncate">{user?.name || 'User'}</p>
+              <p className="text-xs text-gray-500 capitalize">{user?.originalRole}</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Click outside to close dropdowns */}
-      {(showProfileMenu || showPujaSelector) && (
+      {showPujaSelector && (
         <div
           className="fixed inset-0 z-40"
           onClick={() => {
-            setShowProfileMenu(false);
             setShowPujaSelector(false);
           }}
         />

@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, User, Mail, Phone, Clock, UserCheck } from 'lucide-react';
 import useStore from '@/store/useStore';
 import { subscribeToCollection, addDocument, updateDocument, deleteDocument } from '@/lib/firebase';
+import { db } from '@/lib/firebaseConfig';
+import { collection, getDocs } from 'firebase/firestore';
 import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -144,8 +146,8 @@ export default function PendingMembers() {
             onClick={async () => {
               try {
                 const testData = {
-                  name: 'Test User',
-                  email: 'test@example.com',
+                  name: 'Test User ' + Date.now(),
+                  email: 'test' + Date.now() + '@example.com',
                   contact: '1234567890',
                   password: 'test123',
                   status: 'pending',
@@ -154,17 +156,37 @@ export default function PendingMembers() {
                   approvedBy: null,
                   approvedAt: null
                 };
+                console.log('Creating test member with data:', testData);
                 await addDocument(COLLECTIONS.PENDING_MEMBERS, testData);
-                console.log('Test member created');
+                console.log('Test member created successfully');
                 toast.success('Test member created');
               } catch (error) {
                 console.error('Error creating test member:', error);
-                toast.error('Failed to create test member');
+                toast.error('Failed to create test member: ' + error.message);
               }
             }}
             className="px-3 py-1 bg-yellow-500 text-white text-xs rounded"
           >
             Create Test Member
+          </button>
+          <button 
+            onClick={async () => {
+              try {
+                console.log('Direct Firebase query for pending members...');
+                const pendingMembersRef = collection(db, COLLECTIONS.PENDING_MEMBERS);
+                const snapshot = await getDocs(pendingMembersRef);
+                const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                console.log('Direct Firebase query result:', docs);
+                console.log('Number of documents found:', docs.length);
+                toast.success(`Found ${docs.length} pending members in database`);
+              } catch (error) {
+                console.error('Error querying Firebase directly:', error);
+                toast.error('Failed to query Firebase: ' + error.message);
+              }
+            }}
+            className="px-3 py-1 bg-purple-500 text-white text-xs rounded"
+          >
+            Direct Firebase Query
           </button>
         </div>
       </div>

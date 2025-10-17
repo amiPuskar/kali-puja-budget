@@ -50,11 +50,13 @@ export default function Signup() {
 
       if (!emailSnap.empty) {
         toast.error('You are already a member! Please login with your credentials.');
+        setIsLoading(false);
         return;
       }
 
       if (!phoneSnap.empty) {
         toast.error('You are already a member! Please login with your credentials.');
+        setIsLoading(false);
         return;
       }
 
@@ -70,11 +72,13 @@ export default function Signup() {
 
       if (!pendingEmailSnap.empty) {
         toast.error('A registration request with this email is already pending approval');
+        setIsLoading(false);
         return;
       }
 
       if (!pendingPhoneSnap.empty) {
         toast.error('A registration request with this phone number is already pending approval');
+        setIsLoading(false);
         return;
       }
       
@@ -150,9 +154,6 @@ export default function Signup() {
       <div className="max-w-md w-full">
         {/* Logo and Title */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-primary-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-2xl">PB</span>
-          </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">New Kalimata Boys Club</h1>
           <p className="text-gray-600">Join Our Club - Register to become a member</p>
         </div>
