@@ -5,6 +5,7 @@ const useStore = create((set, get) => ({
   members: [], // Club members (not puja-specific)
   pendingMembers: [], // Pending member registrations
   contributions: [], // Member contributions per puja
+  paraCollections: [], // Para collections per puja
   expenses: [],
   volunteers: [],
   tasks: [],
@@ -22,6 +23,7 @@ const useStore = create((set, get) => ({
   setMembers: (members) => set({ members }),
   setPendingMembers: (pendingMembers) => set({ pendingMembers }),
   setContributions: (contributions) => set({ contributions }),
+  setParaCollections: (paraCollections) => set({ paraCollections }),
   setExpenses: (expenses) => set({ expenses }),
   setVolunteers: (volunteers) => set({ volunteers }),
   setTasks: (tasks) => set({ tasks }),
@@ -162,6 +164,7 @@ const useStore = create((set, get) => ({
     members: [],
     pendingMembers: [],
     contributions: [],
+    paraCollections: [],
     expenses: [],
     volunteers: [],
     tasks: [],
