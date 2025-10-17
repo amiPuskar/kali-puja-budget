@@ -10,10 +10,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { getAccessLevel, ROLE_OPTIONS } from '@/lib/roles';
+import { debugRoleMapping, validateUserRole } from '@/lib/roleDebug';
 
 export default function Members() {
   const { members, setMembers } = useStore();
-  const { isSuperAdmin, user, refreshUserSession } = useAuth();
+  const { isSuperAdmin, user, refreshUserSession, refreshUserFromDatabase } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
   const [formData, setFormData] = useState({
@@ -106,26 +107,45 @@ export default function Members() {
         
         // If updating current user's role, refresh their session
         if (user && editingMember.id === user.id && editingMember.role !== memberData.role) {
-          console.log('Current user role updated, refreshing session...');
-          const newAccessRole = getAccessLevel(memberData.role);
-          const updatedUserData = {
-            ...user,
-            role: newAccessRole,
-            originalRole: memberData.role
-          };
+          console.log('🔄 Current user role updated, refreshing session...');
+          console.log('Old role:', editingMember.role, 'New role:', memberData.role);
           
-          refreshUserSession(updatedUserData);
-          toast.success('Member updated. Your session has been refreshed.');
+          // Debug role mapping
+          debugRoleMapping(memberData.role);
+          validateUserRole(user);
+          
+          // First refresh from database to get the latest data
+          const refreshedUser = await refreshUserFromDatabase();
+          if (refreshedUser) {
+            console.log('✅ User refreshed from database successfully');
+            validateUserRole(refreshedUser);
+            toast.success(`Role updated to ${memberData.role}. Your session has been refreshed.`);
+          } else {
+            console.log('⚠️ Database refresh failed, using fallback');
+            // Fallback to manual refresh
+            const newAccessRole = getAccessLevel(memberData.role);
+            console.log('New access role:', newAccessRole);
+            
+            const updatedUserData = {
+              ...user,
+              role: newAccessRole,
+              originalRole: memberData.role
+            };
+            console.log('Updated user data:', updatedUserData);
+            refreshUserSession(updatedUserData);
+            toast.success(`Role updated to ${memberData.role}. Your session has been refreshed.`);
+          }
           
           // Reload the page to apply new permissions
           setTimeout(() => {
+            console.log('🔄 Reloading page to apply new permissions...');
             window.location.reload();
-          }, 1000);
+          }, 1500);
         } else {
           if (formData.password && formData.password.trim() !== '') {
             toast.success('Member updated with new password');
           } else {
-            toast.success('Member updated (password unchanged)');
+            toast.success('Member updated successfully');
           }
         }
         
@@ -210,64 +230,78 @@ export default function Members() {
 
       {/* Summary Card */}
       <div className="card">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="flex-shrink-0 p-3 bg-blue-100 rounded-lg">
-              <Users className="w-6 h-6 text-blue-600" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Total Club Members */}
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0 p-1.5 sm:p-3 bg-blue-100 rounded-lg">
+              <Users className="w-4 h-4 sm:w-6 sm:h-6 text-blue-600" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-sm font-medium text-gray-600">Total Club Members</p>
-              <p className="text-2xl font-semibold text-gray-900">{members.length}</p>
+              <p className="text-xl sm:text-2xl font-semibold text-gray-900">{members.length}</p>
             </div>
           </div>
-          <div className="text-right">
-            <p className="text-sm font-medium text-gray-600">Active Members</p>
-            <p className="text-2xl font-semibold text-gray-900">{members.length}</p>
+          
+          {/* Active Members */}
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0 p-1.5 sm:p-3 bg-green-100 rounded-lg">
+              <Users className="w-4 h-4 sm:w-6 sm:h-6 text-green-600" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-600">Active Members</p>
+              <p className="text-xl sm:text-2xl font-semibold text-gray-900">{members.length}</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Members List */}
-      <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
         {members.map((member) => (
           <div key={member.id} className="card">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="flex-shrink-0 p-3 bg-blue-100 rounded-lg">
-                  <User className="w-6 h-6 text-blue-600" />
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+              <div className="flex items-start space-x-3 min-w-0 flex-1">
+                <div className="flex-shrink-0 p-2 bg-blue-100 rounded-lg">
+                  <User className="w-5 h-5 text-blue-600" />
                 </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="text-lg font-medium text-gray-900 truncate">{member.name}</h3>
-                          <div className="flex items-center space-x-2 mt-1">
-                            {member.contact && (
-                              <span className="text-sm text-gray-500">{member.contact}</span>
-                            )}
-                            {member.contact && member.email && (
-                              <span className="text-sm text-gray-400">|</span>
-                            )}
-                            {member.email && (
-                              <span className="text-sm text-gray-500">{member.email}</span>
-                            )}
-                          </div>
-                          {member.approvedBy && (
-                            <div className="text-xs text-gray-400 mt-1">
-                              Added by: {member.approvedBy} • {member.approvedAt ? new Date(member.approvedAt).toLocaleDateString() : 'Unknown date'}
-                            </div>
-                          )}
-                        </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-lg font-medium text-gray-900 truncate">{member.name}</h3>
+                  <div className="mt-1">
+                    <span className="inline-block text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                      {member.role}
+                    </span>
+                  </div>
+                  <div className="mt-2 space-y-1">
+                    {member.contact && (
+                      <div className="text-sm text-gray-600 truncate">
+                        📞 {member.contact}
+                      </div>
+                    )}
+                    {member.email && (
+                      <div className="text-sm text-gray-600 truncate">
+                        ✉️ {member.email}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="flex space-x-2">
+              {/* Action buttons - show on next line on mobile, inline on desktop */}
+              <div className="flex space-x-1 sm:ml-2 sm:flex-shrink-0">
                 <button
                   onClick={() => handleEdit(member)}
-                  className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                  className="flex-1 sm:flex-none p-2 sm:p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors flex items-center justify-center sm:justify-start"
+                  title="Edit member"
                 >
                   <Edit2 className="w-4 h-4" />
+                  <span className="ml-2 sm:hidden text-sm">Edit</span>
                 </button>
                 <button
                   onClick={() => handleDelete(member.id)}
-                  className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                  className="flex-1 sm:flex-none p-2 sm:p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors flex items-center justify-center sm:justify-start"
+                  title="Delete member"
                 >
                   <Trash2 className="w-4 h-4" />
+                  <span className="ml-2 sm:hidden text-sm">Delete</span>
                 </button>
               </div>
             </div>

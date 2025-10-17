@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { User, Menu, X, ChevronDown, Calendar, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePuja } from '@/contexts/PujaContext';
@@ -10,9 +10,36 @@ const TopBar = ({ onMenuClick, isMenuOpen }) => {
   const [showPujaSelector, setShowPujaSelector] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUserFromDatabase } = useAuth();
   const { currentPuja, pujas, switchPuja } = usePuja();
   const router = useRouter();
+
+  // Debug user data changes and auto-refresh
+  React.useEffect(() => {
+    if (user) {
+      console.log('🔍 TopBar - User data updated:', {
+        id: user.id,
+        name: user.name,
+        originalRole: user.originalRole,
+        role: user.role
+      });
+    }
+  }, [user]);
+
+  // Auto-refresh user data when component mounts
+  React.useEffect(() => {
+    const refreshUserData = async () => {
+      try {
+        await refreshUserFromDatabase();
+      } catch (error) {
+        console.log('TopBar auto-refresh failed:', error);
+      }
+    };
+    
+    // Refresh user data after a short delay to ensure context is ready
+    const timer = setTimeout(refreshUserData, 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -116,7 +143,9 @@ const TopBar = ({ onMenuClick, isMenuOpen }) => {
               </div>
               <div className="hidden sm:block text-left">
                 <p className="text-sm font-medium truncate">{user?.name || 'User'}</p>
-                <p className="text-xs text-gray-500 capitalize">{user?.originalRole}</p>
+                <p className="text-xs text-gray-500 capitalize" key={`role-${user?.id}-${user?.originalRole}`}>
+                  {user?.originalRole || 'Member'}
+                </p>
               </div>
             </button>
 
@@ -127,7 +156,9 @@ const TopBar = ({ onMenuClick, isMenuOpen }) => {
                   {/* User Info */}
                   <div className="px-4 py-2 border-b border-gray-200">
                     <p className="text-sm font-medium text-gray-900">{user?.name || 'User'}</p>
-                    <p className="text-xs text-gray-500 capitalize">{user?.originalRole}</p>
+                    <p className="text-xs text-gray-500 capitalize" key={`dropdown-role-${user?.id}-${user?.originalRole}`}>
+                      {user?.originalRole || 'Member'}
+                    </p>
                   </div>
                   
                   {/* Horizontal Line */}
@@ -143,6 +174,19 @@ const TopBar = ({ onMenuClick, isMenuOpen }) => {
                   >
                     <User className="w-4 h-4" />
                     <span>Profile Settings</span>
+                  </button>
+                  
+                  {/* Refresh Role (for testing) */}
+                  <button
+                    onClick={async () => {
+                      console.log('🔄 Manual role refresh triggered from TopBar');
+                      await refreshUserFromDatabase();
+                      setShowProfileMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 flex items-center space-x-2"
+                  >
+                    <span>🔄</span>
+                    <span>Refresh Role</span>
                   </button>
                   
                   {/* Horizontal Line */}
