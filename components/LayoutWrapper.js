@@ -6,6 +6,7 @@ import { PujaProvider } from '@/contexts/PujaContext';
 import Sidebar from '@/components/Sidebar';
 import TopBar from '@/components/TopBar';
 import ToastHost from '@/components/ToastHost';
+import PujaLoader from '@/components/PujaLoader';
 
 const LayoutWrapper = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -21,13 +22,15 @@ const LayoutWrapper = ({ children }) => {
   return (
     <AuthProvider>
       <PujaProvider>
-        <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
-        <div className="lg:ml-64 min-h-screen">
-          <TopBar onMenuClick={toggleSidebar} isMenuOpen={isSidebarOpen} />
-          <main className="p-4 sm:p-6 lg:p-8">
-            {children}
-          </main>
-        </div>
+        <PujaLoader>
+          <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
+          <div className="lg:ml-64 min-h-screen">
+            <TopBar onMenuClick={toggleSidebar} isMenuOpen={isSidebarOpen} />
+            <main className="p-4 sm:p-6 lg:p-8">
+              {children}
+            </main>
+          </div>
+        </PujaLoader>
         <ToastHost />
       </PujaProvider>
     </AuthProvider>

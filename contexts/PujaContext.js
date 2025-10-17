@@ -1,6 +1,9 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
+import { subscribeToCollection, addDocument, updateDocument, deleteDocument } from '@/lib/firebase';
+import { COLLECTIONS } from '@/lib/firebase';
+import { migratePujasToFirebase } from '@/lib/migratePujas';
 
 const PujaContext = createContext();
 
@@ -18,119 +21,129 @@ export const PujaProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load pujas from localStorage or initialize with default data
-    const loadPujas = () => {
+    let unsubscribe;
+    
+    const initializePujas = async () => {
       try {
-        const savedPujas = localStorage.getItem('pujas');
-        const savedCurrentPuja = localStorage.getItem('currentPuja');
+        // First, try to migrate any existing localStorage data
+        await migratePujasToFirebase();
         
-        if (savedPujas) {
-          const parsedPujas = JSON.parse(savedPujas);
-          setPujas(parsedPujas);
+        // Then subscribe to Firebase data
+        unsubscribe = subscribeToCollection(COLLECTIONS.PUJAS, async (data) => {
+          console.log('🔄 Pujas loaded from Firebase:', data);
+          console.log('📊 Data sync check - All users should see this same data');
           
-          if (savedCurrentPuja) {
-            const parsedCurrentPuja = JSON.parse(savedCurrentPuja);
-            setCurrentPuja(parsedCurrentPuja);
-          } else if (parsedPujas.length > 0) {
-            setCurrentPuja(parsedPujas[0]);
+          // If no pujas exist, just set empty array
+          if (!data || data.length === 0) {
+            console.log('No pujas found in Firebase.');
+            setPujas([]);
+            setCurrentPuja(null);
+            setLoading(false);
+            return;
           }
-        } else {
-          // Initialize with default pujas
-          const defaultPujas = [
-            {
-              id: '1',
-              name: 'Kali Puja 2024',
-              year: 2024,
-              startDate: '2024-10-31',
-              endDate: '2024-11-01',
-              status: 'active',
-              description: 'Annual Kali Puja celebration',
-              managerId: '', // Will be assigned by Super Admin
-              createdAt: new Date().toISOString()
-            },
-            {
-              id: '2',
-              name: 'Durga Puja 2024',
-              year: 2024,
-              startDate: '2024-10-10',
-              endDate: '2024-10-14',
-              status: 'completed',
-              description: 'Durga Puja celebration',
-              managerId: '', // Will be assigned by Super Admin
-              createdAt: new Date().toISOString()
-            },
-            {
-              id: '3',
-              name: 'Kali Puja 2023',
-              year: 2023,
-              startDate: '2023-11-12',
-              endDate: '2023-11-13',
-              status: 'completed',
-              description: 'Previous year Kali Puja',
-              managerId: '', // Will be assigned by Super Admin
-              createdAt: new Date().toISOString()
-            }
-          ];
           
-          setPujas(defaultPujas);
-          setCurrentPuja(defaultPujas[0]);
-          localStorage.setItem('pujas', JSON.stringify(defaultPujas));
-          localStorage.setItem('currentPuja', JSON.stringify(defaultPujas[0]));
-        }
+          setPujas(data);
+          
+          // CRITICAL: Always use the first puja as default to ensure consistency
+          // This ensures all users see the same data initially
+          if (data.length > 0) {
+            const firstPuja = data[0];
+            
+            // Check if current puja is still valid
+            const savedCurrentPuja = localStorage.getItem('currentPuja');
+            let shouldSetCurrentPuja = true;
+            
+            if (savedCurrentPuja) {
+              try {
+                const parsedCurrentPuja = JSON.parse(savedCurrentPuja);
+                // Verify the saved puja still exists in Firebase data
+                const pujaExists = data.find(p => p.id === parsedCurrentPuja.id);
+                if (pujaExists) {
+                  setCurrentPuja(pujaExists);
+                  shouldSetCurrentPuja = false;
+                }
+              } catch (error) {
+                console.error('Error parsing saved current puja:', error);
+              }
+            }
+            
+            // If no valid saved puja, use the first one
+            if (shouldSetCurrentPuja) {
+              setCurrentPuja(firstPuja);
+              localStorage.setItem('currentPuja', JSON.stringify(firstPuja));
+              console.log('Set current puja to first available:', firstPuja.name);
+            }
+          }
+          
+          setLoading(false);
+        });
       } catch (error) {
-        console.error('Error loading pujas:', error);
-      } finally {
+        console.error('Error initializing pujas:', error);
         setLoading(false);
       }
     };
+    
+    initializePujas();
 
-    loadPujas();
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, []);
 
-  const createPuja = (pujaData) => {
-    const newPuja = {
-      id: Date.now().toString(),
-      ...pujaData,
-      status: pujaData.status || 'active',
-      createdAt: new Date().toISOString()
-    };
-    
-    const updatedPujas = [...pujas, newPuja];
-    setPujas(updatedPujas);
-    localStorage.setItem('pujas', JSON.stringify(updatedPujas));
-    
-    return newPuja;
-  };
-
-  const updatePuja = (pujaId, updates) => {
-    const updatedPujas = pujas.map(puja => 
-      puja.id === pujaId ? { ...puja, ...updates } : puja
-    );
-    setPujas(updatedPujas);
-    localStorage.setItem('pujas', JSON.stringify(updatedPujas));
-    
-    // Update current puja if it's the one being updated
-    if (currentPuja && currentPuja.id === pujaId) {
-      const updatedCurrentPuja = { ...currentPuja, ...updates };
-      setCurrentPuja(updatedCurrentPuja);
-      localStorage.setItem('currentPuja', JSON.stringify(updatedCurrentPuja));
+  const createPuja = async (pujaData) => {
+    try {
+      const pujaToCreate = {
+        ...pujaData,
+        status: pujaData.status || 'active'
+      };
+      
+      const docId = await addDocument(COLLECTIONS.PUJAS, pujaToCreate);
+      console.log('Puja created with ID:', docId);
+      return { id: docId, ...pujaToCreate };
+    } catch (error) {
+      console.error('Error creating puja:', error);
+      throw error;
     }
   };
 
-  const deletePuja = (pujaId) => {
-    const updatedPujas = pujas.filter(puja => puja.id !== pujaId);
-    setPujas(updatedPujas);
-    localStorage.setItem('pujas', JSON.stringify(updatedPujas));
-    
-    // If current puja is deleted, switch to first available puja
-    if (currentPuja && currentPuja.id === pujaId) {
-      if (updatedPujas.length > 0) {
-        setCurrentPuja(updatedPujas[0]);
-        localStorage.setItem('currentPuja', JSON.stringify(updatedPujas[0]));
-      } else {
-        setCurrentPuja(null);
-        localStorage.removeItem('currentPuja');
+  const updatePuja = async (pujaId, updates) => {
+    try {
+      await updateDocument(COLLECTIONS.PUJAS, pujaId, updates);
+      console.log('Puja updated:', pujaId);
+      
+      // Update current puja if it's the one being updated
+      if (currentPuja && currentPuja.id === pujaId) {
+        const updatedCurrentPuja = { ...currentPuja, ...updates };
+        setCurrentPuja(updatedCurrentPuja);
+        localStorage.setItem('currentPuja', JSON.stringify(updatedCurrentPuja));
       }
+    } catch (error) {
+      console.error('Error updating puja:', error);
+      throw error;
+    }
+  };
+
+  const deletePuja = async (pujaId) => {
+    try {
+      await deleteDocument(COLLECTIONS.PUJAS, pujaId);
+      console.log('Puja deleted:', pujaId);
+      
+      // If current puja is deleted, switch to first available puja
+      if (currentPuja && currentPuja.id === pujaId) {
+        const remainingPujas = pujas.filter(p => p.id !== pujaId);
+        if (remainingPujas.length > 0) {
+          setCurrentPuja(remainingPujas[0]);
+          localStorage.setItem('currentPuja', JSON.stringify(remainingPujas[0]));
+        } else {
+          setCurrentPuja(null);
+          localStorage.removeItem('currentPuja');
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting puja:', error);
+      throw error;
     }
   };
 
@@ -170,3 +183,4 @@ export const PujaProvider = ({ children }) => {
     </PujaContext.Provider>
   );
 };
+
