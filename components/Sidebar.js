@@ -16,7 +16,8 @@ import {
   DollarSign,
   Calendar,
   CalendarDays,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Coins
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -27,6 +28,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { name: 'Dashboard', href: '/', icon: Home, visible: true },
     { name: 'Puja Management', href: '/pujas', icon: CalendarDays, visible: hasPermission(user?.role, 'canManagePujas') },
     { name: 'Contributions', href: '/contributions', icon: UserCheck, visible: true },
+    { name: 'Para Collection', href: '/para-collection', icon: Coins, visible: true },
     { name: 'Members', href: '/members', icon: Users, visible: hasPermission(user?.role, 'canManageMembers') },
     { name: 'Pending Members', href: '/pending-members', icon: UserCheck, visible: hasPermission(user?.role, 'canManagePendingMembers') },
     { name: 'Signup Link', href: '/signup-link', icon: LinkIcon, visible: hasPermission(user?.role, 'canViewSignupLink') },
