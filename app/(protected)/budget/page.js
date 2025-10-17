@@ -10,6 +10,7 @@ import { usePuja } from '@/contexts/PujaContext';
 import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import SummaryCard from '@/components/SummaryCard';
 
 export default function Budget() {
   const { 
@@ -184,23 +185,24 @@ export default function Budget() {
       )}
 
       {/* Summary Card */}
-      <div className="card">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center space-x-3">
-            <div className="flex-shrink-0 p-2 sm:p-3 bg-blue-100 rounded-lg">
-              <Target className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Budget Allocated</p>
-              <p className="text-xl sm:text-2xl font-semibold text-gray-900">₹{totalBudget.toLocaleString()}</p>
-            </div>
-          </div>
-          <div className="text-left sm:text-right">
-            <p className="text-sm font-medium text-gray-600">Budget Allocations</p>
-            <p className="text-xl sm:text-2xl font-semibold text-gray-900">{currentAllocations.length}</p>
-          </div>
-        </div>
-      </div>
+      <SummaryCard
+        items={[
+          {
+            icon: Target,
+            label: 'Total Budget Allocated',
+            value: `₹${totalBudget.toLocaleString()}`,
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-100'
+          },
+          {
+            icon: Target,
+            label: 'Budget Allocations',
+            value: currentAllocations.length.toString(),
+            color: 'text-green-600',
+            bgColor: 'bg-green-100'
+          }
+        ]}
+      />
 
       {/* Budget Allocations List */}
       <div className="space-y-4">

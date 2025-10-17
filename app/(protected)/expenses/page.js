@@ -10,6 +10,7 @@ import { usePuja } from '@/contexts/PujaContext';
 import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import SummaryCard from '@/components/SummaryCard';
 
 export default function Expenses() {
   const { expenses, setExpenses, budgetItems, setBudgetItems, budgetAllocations, setBudgetAllocations } = useStore();
@@ -180,43 +181,42 @@ export default function Expenses() {
       )}
 
       {/* Summary Card */}
-      <div className="card">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="flex-shrink-0 p-3 bg-red-100 rounded-lg">
-              <Receipt className="w-6 h-6 text-red-600" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Expenses</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                ₹{totalSpent.toLocaleString()}
-              </p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-sm font-medium text-gray-600">Total Items</p>
-            <p className="text-2xl font-semibold text-gray-900">{expenses.length}</p>
-          </div>
-        </div>
-      </div>
+      <SummaryCard
+        items={[
+          {
+            icon: Receipt,
+            label: 'Total Expenses',
+            value: `₹${totalSpent.toLocaleString()}`,
+            color: 'text-red-600',
+            bgColor: 'bg-red-100'
+          },
+          {
+            icon: Receipt,
+            label: 'Total Items',
+            value: expenses.length.toString(),
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-100'
+          }
+        ]}
+      />
 
       {/* Expenses List */}
       <div className="space-y-4">
         {expenses.map((expense) => (
           <div key={expense.id} className="card">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="flex-shrink-0 p-3 bg-red-100 rounded-lg">
-                  <Receipt className="w-6 h-6 text-red-600" />
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-start space-x-3 min-w-0 flex-1">
+                <div className="flex-shrink-0 p-2 bg-red-100 rounded-lg">
+                  <Receipt className="w-5 h-5 text-red-600" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <h3 className="text-lg font-medium text-gray-900 truncate">{expense.description}</h3>
-                  <div className="flex items-center space-x-4 mt-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mt-1 space-y-1 sm:space-y-0">
                     <span className="text-xs text-gray-500">
                       {new Date(expense.date).toLocaleDateString()}
                     </span>
                     {expense.category && (
-                      <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                      <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded inline-block w-fit">
                         {expense.category}
                       </span>
                     )}
@@ -226,23 +226,25 @@ export default function Expenses() {
                   )}
                 </div>
               </div>
-              <div className="flex items-center space-x-4">
-                <div className="text-right">
+              <div className="flex items-center justify-between sm:justify-end sm:space-x-4">
+                <div className="text-left sm:text-right">
                   <p className="text-lg font-semibold text-red-600">
                     ₹{expense.amount?.toLocaleString() || 0}
                   </p>
                 </div>
                 {canManage && (
-                  <div className="flex space-x-2">
+                  <div className="flex space-x-1">
                     <button
                       onClick={() => handleEdit(expense)}
-                      className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                      className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                      title="Edit expense"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(expense.id)}
-                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                      title="Delete expense"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -265,7 +267,7 @@ export default function Expenses() {
       {/* Modal */}
       {canManage && isModalOpen && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-10 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+          <div className="relative top-4 sm:top-10 mx-auto p-4 sm:p-5 border w-11/12 sm:w-96 max-w-md shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <button
                 type="button"

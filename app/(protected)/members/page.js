@@ -9,6 +9,7 @@ import { COLLECTIONS } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import SummaryCard from '@/components/SummaryCard';
 import { getAccessLevel, ROLE_OPTIONS } from '@/lib/roles';
 import { debugRoleMapping, validateUserRole } from '@/lib/roleDebug';
 
@@ -229,31 +230,24 @@ export default function Members() {
       />
 
       {/* Summary Card */}
-      <div className="card">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Total Club Members */}
-          <div className="flex items-center space-x-3">
-            <div className="flex-shrink-0 p-1.5 sm:p-3 bg-blue-100 rounded-lg">
-              <Users className="w-4 h-4 sm:w-6 sm:h-6 text-blue-600" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-600">Total Club Members</p>
-              <p className="text-xl sm:text-2xl font-semibold text-gray-900">{members.length}</p>
-            </div>
-          </div>
-          
-          {/* Active Members */}
-          <div className="flex items-center space-x-3">
-            <div className="flex-shrink-0 p-1.5 sm:p-3 bg-green-100 rounded-lg">
-              <Users className="w-4 h-4 sm:w-6 sm:h-6 text-green-600" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-600">Active Members</p>
-              <p className="text-xl sm:text-2xl font-semibold text-gray-900">{members.length}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <SummaryCard
+        items={[
+          {
+            icon: Users,
+            label: 'Total Club Members',
+            value: members.length.toString(),
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-100'
+          },
+          {
+            icon: Users,
+            label: 'Active Members',
+            value: members.length.toString(),
+            color: 'text-green-600',
+            bgColor: 'bg-green-100'
+          }
+        ]}
+      />
 
       {/* Members List */}
       <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
