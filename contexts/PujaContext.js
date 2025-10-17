@@ -94,6 +94,15 @@ export const PujaProvider = ({ children }) => {
 
   const createPuja = async (pujaData) => {
     try {
+      // Check for duplicate puja (same name and year)
+      const existingPuja = pujas.find(p => 
+        p.name === pujaData.name && p.year === pujaData.year
+      );
+      
+      if (existingPuja) {
+        throw new Error(`A puja with name "${pujaData.name}" and year ${pujaData.year} already exists.`);
+      }
+
       const pujaToCreate = {
         ...pujaData,
         status: pujaData.status || 'active'
