@@ -207,7 +207,6 @@ export default function Contributions() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <h3 className="text-lg font-medium text-gray-900 truncate">{member.name}</h3>
-                  <p className="text-sm text-gray-500 truncate">{member.role}</p>
                   {member.contact && (
                     <p className="text-xs text-gray-400 mt-1 truncate">{member.contact}</p>
                   )}
@@ -330,7 +329,7 @@ export default function Contributions() {
                   <option value="">Select member</option>
                   {members.map((member) => (
                     <option key={member.id} value={member.id}>
-                      {member.name} ({member.role})
+                      {member.name}
                     </option>
                   ))}
                 </select>

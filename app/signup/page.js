@@ -20,21 +20,141 @@ export default function Signup() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
   const router = useRouter();
+
+  // Real-time validation functions
+  const validateField = (field, value) => {
+    const errors = { ...fieldErrors };
+    
+    switch (field) {
+      case 'name':
+        if (!value.trim()) {
+          errors.name = 'Full name is required';
+        } else if (value.trim().length < 2) {
+          errors.name = 'Name must be at least 2 characters';
+        } else if (!/^[a-zA-Z\s]+$/.test(value.trim())) {
+          errors.name = 'Name can only contain letters and spaces';
+        } else {
+          delete errors.name;
+        }
+        break;
+        
+      case 'email':
+        if (!value.trim()) {
+          errors.email = 'Email is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
+          errors.email = 'Please enter a valid email address';
+        } else {
+          delete errors.email;
+        }
+        break;
+        
+      case 'contact':
+        if (!value.trim()) {
+          errors.contact = 'Contact number is required';
+        } else if (!/^\d{10}$/.test(value.trim())) {
+          errors.contact = 'Contact must be exactly 10 digits';
+        } else {
+          delete errors.contact;
+        }
+        break;
+        
+      case 'password':
+        if (!value) {
+          errors.password = 'Password is required';
+        } else if (value.length < 6) {
+          errors.password = 'Password must be at least 6 characters';
+        } else if (value.length > 50) {
+          errors.password = 'Password must be less than 50 characters';
+        } else {
+          delete errors.password;
+        }
+        // Also validate confirm password if it exists
+        if (formData.confirmPassword) {
+          validateField('confirmPassword', formData.confirmPassword);
+        }
+        break;
+        
+      case 'confirmPassword':
+        if (!value) {
+          errors.confirmPassword = 'Please confirm your password';
+        } else if (value !== formData.password) {
+          errors.confirmPassword = 'Passwords do not match';
+        } else {
+          delete errors.confirmPassword;
+        }
+        break;
+    }
+    
+    setFieldErrors(errors);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    
+    // Restrict contact field to only digits
+    if (name === 'contact') {
+      const numericValue = value.replace(/\D/g, ''); // Remove non-digits
+      setFormData(prev => ({ ...prev, [name]: numericValue }));
+      validateField(name, numericValue);
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+      validateField(name, value);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Validation
-      if (formData.password !== formData.confirmPassword) {
-        toast.error('Passwords do not match');
-        return;
+      // Comprehensive validation
+      const errors = [];
+
+      // Name validation
+      if (!formData.name.trim()) {
+        errors.push('Full name is required');
+      } else if (formData.name.trim().length < 2) {
+        errors.push('Full name must be at least 2 characters long');
+      } else if (!/^[a-zA-Z\s]+$/.test(formData.name.trim())) {
+        errors.push('Full name can only contain letters and spaces');
       }
 
-      if (formData.password.length < 6) {
-        toast.error('Password must be at least 6 characters long');
+      // Email validation
+      if (!formData.email.trim()) {
+        errors.push('Email address is required');
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+        errors.push('Please enter a valid email address');
+      }
+
+      // Phone validation (10 digits)
+      if (!formData.contact.trim()) {
+        errors.push('Contact number is required');
+      } else if (!/^\d{10}$/.test(formData.contact.trim())) {
+        errors.push('Contact number must be exactly 10 digits');
+      }
+
+      // Password validation
+      if (!formData.password) {
+        errors.push('Password is required');
+      } else if (formData.password.length < 6) {
+        errors.push('Password must be at least 6 characters long');
+      } else if (formData.password.length > 50) {
+        errors.push('Password must be less than 50 characters');
+      }
+
+      // Confirm password validation
+      if (!formData.confirmPassword) {
+        errors.push('Please confirm your password');
+      } else if (formData.password !== formData.confirmPassword) {
+        errors.push('Passwords do not match');
+      }
+
+      // Show all validation errors
+      if (errors.length > 0) {
+        errors.forEach(error => toast.error(error));
+        setIsLoading(false);
         return;
       }
 
@@ -109,12 +229,6 @@ export default function Signup() {
     }
   };
 
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
 
   if (isSubmitted) {
     return (
@@ -181,10 +295,13 @@ export default function Signup() {
                   required
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="input-field pl-10"
+                  className={`input-field pl-10 ${fieldErrors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                   placeholder="Enter your full name"
                 />
               </div>
+              {fieldErrors.name && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.name}</p>
+              )}
             </div>
 
             {/* Email */}
@@ -202,10 +319,13 @@ export default function Signup() {
                   required
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="input-field pl-10"
+                  className={`input-field pl-10 ${fieldErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                   placeholder="Enter your email address"
                 />
               </div>
+              {fieldErrors.email && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+              )}
             </div>
 
             {/* Contact Number */}
@@ -223,10 +343,14 @@ export default function Signup() {
                   required
                   value={formData.contact}
                   onChange={handleInputChange}
-                  className="input-field pl-10"
-                  placeholder="Enter your contact number"
+                  className={`input-field pl-10 ${fieldErrors.contact ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  placeholder="Enter your 10-digit contact number"
+                  maxLength="10"
                 />
               </div>
+              {fieldErrors.contact && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.contact}</p>
+              )}
             </div>
 
             {/* Password */}
@@ -244,8 +368,8 @@ export default function Signup() {
                   required
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="input-field pl-10 pr-10"
-                  placeholder="Create a password"
+                  className={`input-field pl-10 pr-10 ${fieldErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  placeholder="Create a password (min 6 characters)"
                 />
                 <button
                   type="button"
@@ -259,6 +383,9 @@ export default function Signup() {
                   )}
                 </button>
               </div>
+              {fieldErrors.password && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.password}</p>
+              )}
             </div>
 
             {/* Confirm Password */}
@@ -276,7 +403,7 @@ export default function Signup() {
                   required
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className="input-field pl-10 pr-10"
+                  className={`input-field pl-10 pr-10 ${fieldErrors.confirmPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                   placeholder="Confirm your password"
                 />
                 <button
@@ -291,8 +418,10 @@ export default function Signup() {
                   )}
                 </button>
               </div>
+              {fieldErrors.confirmPassword && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.confirmPassword}</p>
+              )}
             </div>
-
 
             {/* Submit Button */}
             <button

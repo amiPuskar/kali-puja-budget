@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, User, Mail, Phone, Clock, UserCheck } from 'lucide-react';
 import useStore from '@/store/useStore';
 import { subscribeToCollection, addDocument, updateDocument, deleteDocument } from '@/lib/firebase';
-import { db } from '@/lib/firebaseConfig';
-import { collection, getDocs } from 'firebase/firestore';
 import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,12 +21,10 @@ export default function PendingMembers() {
   });
 
   useEffect(() => {
-    console.log('Subscribing to pending members collection:', COLLECTIONS.PENDING_MEMBERS);
     const unsubscribe = subscribeToCollection(COLLECTIONS.PENDING_MEMBERS, (data) => {
-      console.log('Pending members data received:', data);
-      console.log('Data length:', data.length);
-      setPendingMembers(data);
+      setPendingMembers(data || []);
     });
+    
     return () => unsubscribe();
   }, [setPendingMembers]);
 
@@ -44,12 +40,8 @@ export default function PendingMembers() {
   const handleReject = async (member) => {
     if (window.confirm(`Are you sure you want to reject ${member.name}'s membership request?`)) {
       try {
-        await updateDocument(COLLECTIONS.PENDING_MEMBERS, member.id, {
-          status: 'rejected',
-          reviewedBy: user.name,
-          reviewedAt: new Date().toISOString(),
-          rejectionNotes: 'Rejected by Super Admin'
-        });
+        // Delete the pending member document
+        await deleteDocument(COLLECTIONS.PENDING_MEMBERS, member.id);
         toast.success('Membership request rejected');
       } catch (error) {
         console.error('Error rejecting member:', error);
@@ -76,14 +68,8 @@ export default function PendingMembers() {
 
       await addDocument(COLLECTIONS.MEMBERS, memberData);
 
-      // Update pending member status
-      await updateDocument(COLLECTIONS.PENDING_MEMBERS, selectedMember.id, {
-        status: 'approved',
-        approvedRole: approvalData.role,
-        reviewedBy: user.name,
-        reviewedAt: new Date().toISOString(),
-        approvalNotes: approvalData.notes
-      });
+      // Remove from pending members (delete the document)
+      await deleteDocument(COLLECTIONS.PENDING_MEMBERS, selectedMember.id);
 
       toast.success('Member approved and added to the system');
       setShowApprovalModal(false);
@@ -94,9 +80,8 @@ export default function PendingMembers() {
     }
   };
 
-  const pendingRequests = pendingMembers.filter(member => member.status === 'pending');
-  const approvedRequests = pendingMembers.filter(member => member.status === 'approved');
-  const rejectedRequests = pendingMembers.filter(member => member.status === 'rejected');
+  // All pending members are shown (no status filtering needed since approved/rejected are deleted)
+  const pendingRequests = pendingMembers;
 
   if (!isSuperAdmin()) {
     return (
@@ -116,80 +101,6 @@ export default function PendingMembers() {
         showButton={false}
       />
 
-      {/* Debug Info */}
-      <div className="card bg-gray-50">
-        <h3 className="text-sm font-medium text-gray-900 mb-2">Debug Info</h3>
-        <p className="text-xs text-gray-600">Total pending members: {pendingMembers.length}</p>
-        <p className="text-xs text-gray-600">Collection: {COLLECTIONS.PENDING_MEMBERS}</p>
-        <div className="flex gap-2 mt-2">
-          <button 
-            onClick={() => console.log('Current pending members:', pendingMembers)}
-            className="px-3 py-1 bg-blue-500 text-white text-xs rounded"
-          >
-            Log to Console
-          </button>
-          <button 
-            onClick={() => {
-              console.log('Refreshing pending members...');
-              // Force re-subscription
-              const unsubscribe = subscribeToCollection(COLLECTIONS.PENDING_MEMBERS, (data) => {
-                console.log('Refreshed data:', data);
-                setPendingMembers(data);
-              });
-              setTimeout(() => unsubscribe(), 1000);
-            }}
-            className="px-3 py-1 bg-green-500 text-white text-xs rounded"
-          >
-            Refresh Data
-          </button>
-          <button 
-            onClick={async () => {
-              try {
-                const testData = {
-                  name: 'Test User ' + Date.now(),
-                  email: 'test' + Date.now() + '@example.com',
-                  contact: '1234567890',
-                  password: 'test123',
-                  status: 'pending',
-                  requestedAt: new Date().toISOString(),
-                  role: 'Member',
-                  approvedBy: null,
-                  approvedAt: null
-                };
-                console.log('Creating test member with data:', testData);
-                await addDocument(COLLECTIONS.PENDING_MEMBERS, testData);
-                console.log('Test member created successfully');
-                toast.success('Test member created');
-              } catch (error) {
-                console.error('Error creating test member:', error);
-                toast.error('Failed to create test member: ' + error.message);
-              }
-            }}
-            className="px-3 py-1 bg-yellow-500 text-white text-xs rounded"
-          >
-            Create Test Member
-          </button>
-          <button 
-            onClick={async () => {
-              try {
-                console.log('Direct Firebase query for pending members...');
-                const pendingMembersRef = collection(db, COLLECTIONS.PENDING_MEMBERS);
-                const snapshot = await getDocs(pendingMembersRef);
-                const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                console.log('Direct Firebase query result:', docs);
-                console.log('Number of documents found:', docs.length);
-                toast.success(`Found ${docs.length} pending members in database`);
-              } catch (error) {
-                console.error('Error querying Firebase directly:', error);
-                toast.error('Failed to query Firebase: ' + error.message);
-              }
-            }}
-            className="px-3 py-1 bg-purple-500 text-white text-xs rounded"
-          >
-            Direct Firebase Query
-          </button>
-        </div>
-      </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">

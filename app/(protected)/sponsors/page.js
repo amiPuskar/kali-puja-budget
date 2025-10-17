@@ -25,6 +25,45 @@ export default function Sponsors() {
     notes: '',
     received: false
   });
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  // Validation functions
+  const validateField = (field, value) => {
+    const errors = { ...fieldErrors };
+    
+    switch (field) {
+      case 'contact':
+        if (value && !/^\d{10}$/.test(value.trim())) {
+          errors.contact = 'Contact must be exactly 10 digits';
+        } else {
+          delete errors.contact;
+        }
+        break;
+      case 'email':
+        if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
+          errors.email = 'Please enter a valid email address';
+        } else {
+          delete errors.email;
+        }
+        break;
+    }
+    
+    setFieldErrors(errors);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    
+    // Restrict contact field to only digits
+    if (name === 'contact') {
+      const numericValue = value.replace(/\D/g, ''); // Remove non-digits
+      setFormData(prev => ({ ...prev, [name]: numericValue }));
+      validateField(name, numericValue);
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+      validateField(name, value);
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = subscribeToCollection(COLLECTIONS.SPONSORS, setSponsors);
@@ -344,11 +383,16 @@ export default function Sponsors() {
                   </label>
                   <input
                     type="tel"
+                    name="contact"
                     value={formData.contact}
-                    onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
-                    className="input-field"
-                    placeholder="Enter contact number"
+                    onChange={handleInputChange}
+                    className={`input-field ${fieldErrors.contact ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                    placeholder="Enter 10-digit contact number"
+                    maxLength="10"
                   />
+                  {fieldErrors.contact && (
+                    <p className="mt-1 text-sm text-red-600">{fieldErrors.contact}</p>
+                  )}
                 </div>
                 
                 <div>
@@ -357,11 +401,15 @@ export default function Sponsors() {
                   </label>
                   <input
                     type="email"
+                    name="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="input-field"
+                    onChange={handleInputChange}
+                    className={`input-field ${fieldErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                     placeholder="Enter email address"
                   />
+                  {fieldErrors.email && (
+                    <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+                  )}
                 </div>
                 
                 <div>
