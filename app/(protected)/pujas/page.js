@@ -54,10 +54,10 @@ export default function Pujas() {
       }
 
       if (editingPuja) {
-        updatePuja(editingPuja.id, pujaData);
+        await updatePuja(editingPuja.id, pujaData);
         toast.success('Puja updated successfully');
       } else {
-        createPuja(pujaData);
+        await createPuja(pujaData);
         toast.success('Puja created successfully');
       }
       resetForm();
@@ -84,7 +84,7 @@ export default function Pujas() {
   const handleDelete = async (pujaId) => {
     if (window.confirm('Are you sure you want to delete this puja? This will also delete all associated data.')) {
       try {
-        deletePuja(pujaId);
+        await deletePuja(pujaId);
         toast.success('Puja deleted successfully');
       } catch (error) {
         console.error('Error deleting puja:', error);
@@ -273,7 +273,7 @@ export default function Pujas() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="input-field"
-                  placeholder="Enter puja name (e.g., Kali Puja 2024)"
+                  placeholder="Enter puja name (e.g., Kali Puja 2025)"
                 />
               </div>
 
