@@ -75,8 +75,54 @@ export const AuthProvider = ({ children }) => {
   };
 
   const refreshUserSession = (updatedUserData) => {
+    console.log('🔄 Refreshing user session with:', updatedUserData);
     setUser(updatedUserData);
     localStorage.setItem('user', JSON.stringify(updatedUserData));
+    
+    // Force a small delay to ensure state updates propagate
+    setTimeout(() => {
+      console.log('✅ User session refreshed, current user:', updatedUserData);
+    }, 100);
+  };
+
+  const refreshUserFromDatabase = async () => {
+    try {
+      const currentUser = localStorage.getItem('user');
+      if (currentUser) {
+        const parsedUser = JSON.parse(currentUser);
+        console.log('Refreshing user from database for ID:', parsedUser.id);
+        
+        // Import Firebase functions
+        const { getDoc, doc } = await import('firebase/firestore');
+        const { db } = await import('@/lib/firebaseConfig');
+        const { COLLECTIONS } = await import('@/lib/firebase');
+        const { getAccessLevel } = await import('@/lib/roles');
+        
+        // Get fresh user data from database
+        const userDoc = await getDoc(doc(db, COLLECTIONS.MEMBERS, parsedUser.id));
+        if (userDoc.exists()) {
+          const memberData = userDoc.data();
+          const newAccessRole = getAccessLevel(memberData.role);
+          
+          const refreshedUserData = {
+            ...parsedUser,
+            name: memberData.name || parsedUser.name,
+            role: newAccessRole,
+            originalRole: memberData.role,
+            contact: memberData.contact || parsedUser.contact,
+            email: memberData.email || parsedUser.email
+          };
+          
+          console.log('User refreshed from database:', refreshedUserData);
+          setUser(refreshedUserData);
+          localStorage.setItem('user', JSON.stringify(refreshedUserData));
+          return refreshedUserData;
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing user from database:', error);
+    }
+    return null;
   };
 
   const forceRefreshUserRole = () => {
@@ -132,6 +178,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     refreshUserSession,
+    refreshUserFromDatabase,
     forceRefreshUserRole,
     hasRole,
     isAdmin,
