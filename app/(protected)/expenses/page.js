@@ -6,10 +6,15 @@ import useStore from '@/store/useStore';
 import { subscribeToCollection, addDocument, updateDocument, deleteDocument } from '@/lib/firebase';
 import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
+import { usePuja } from '@/contexts/PujaContext';
+import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
 
 export default function Expenses() {
-  const { expenses, setExpenses, budget, setBudget, getBudgetCategories } = useStore();
+  const { expenses, setExpenses, budgetItems, setBudgetItems, getBudgetCategories } = useStore();
+  const { currentPuja } = usePuja();
+  const { isAdmin } = useAuth();
+  const canManage = isAdmin();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
   const [formData, setFormData] = useState({
@@ -21,37 +26,49 @@ export default function Expenses() {
   });
 
   useEffect(() => {
-    const unsubscribeExpenses = subscribeToCollection(COLLECTIONS.EXPENSES, setExpenses);
-    const unsubscribeBudget = subscribeToCollection(COLLECTIONS.BUDGET, setBudget);
+    // Subscribe to budget items (not puja-specific)
+    const unsubscribeBudgetItems = subscribeToCollection(COLLECTIONS.BUDGET_ITEMS, setBudgetItems);
+    
+    if (currentPuja) {
+      // Subscribe to expenses for current puja
+      const unsubscribeExpenses = subscribeToCollection(`${COLLECTIONS.EXPENSES}_${currentPuja.id}`, setExpenses);
+      
+      return () => {
+        unsubscribeBudgetItems();
+        unsubscribeExpenses();
+      };
+    }
+    
     return () => {
-      unsubscribeExpenses();
-      unsubscribeBudget();
+      unsubscribeBudgetItems();
     };
-  }, [setExpenses, setBudget]);
+  }, [currentPuja, setExpenses, setBudgetItems]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!currentPuja) {
+      toast.error('Please select a puja first');
+      return;
+    }
+
     try {
       const expenseData = {
         ...formData,
         amount: parseFloat(formData.amount) || 0,
-        date: new Date(formData.date).toISOString()
+        date: new Date(formData.date).toISOString(),
+        pujaId: currentPuja.id,
+        pujaName: currentPuja.name
       };
       
       if (editingExpense) {
-        await updateDocument(COLLECTIONS.EXPENSES, editingExpense.id, expenseData);
-        setEditingExpense(null);
-        setIsModalOpen(false);
-        setFormData({ description: '', amount: '', category: '', date: new Date().toISOString().split('T')[0], notes: '' });
+        await updateDocument(`${COLLECTIONS.EXPENSES}_${currentPuja.id}`, editingExpense.id, expenseData);
         toast.success('Expense updated');
       } else {
-        await addDocument(COLLECTIONS.EXPENSES, expenseData);
-        setEditingExpense(null);
-        setIsModalOpen(false);
-        setFormData({ description: '', amount: '', category: '', date: new Date().toISOString().split('T')[0], notes: '' });
+        await addDocument(`${COLLECTIONS.EXPENSES}_${currentPuja.id}`, expenseData);
         toast.success('Expense added');
       }
-      // resetForm();
+      resetForm();
     } catch (error) {
       console.error('Error saving expense:', error);
       toast.error('Failed to save expense');
@@ -71,11 +88,15 @@ export default function Expenses() {
   };
 
   const handleDelete = async (id) => {
+    if (!currentPuja) return;
+    
     if (window.confirm('Are you sure you want to delete this expense?')) {
       try {
-        await deleteDocument(COLLECTIONS.EXPENSES, id);
+        await deleteDocument(`${COLLECTIONS.EXPENSES}_${currentPuja.id}`, id);
+        toast.success('Expense deleted');
       } catch (error) {
         console.error('Error deleting expense:', error);
+        toast.error('Failed to delete expense');
       }
     }
   };
@@ -106,6 +127,16 @@ export default function Expenses() {
   ];
   const categories = [...budgetCategories, ...defaultCategories];
 
+  if (!currentPuja) {
+    return (
+      <div className="text-center py-12">
+        <Receipt className="mx-auto h-12 w-12 text-gray-400" />
+        <h3 className="mt-2 text-sm font-medium text-gray-900">No Puja Selected</h3>
+        <p className="mt-1 text-sm text-gray-500">Please select a puja to manage expenses.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 sm:space-y-8">
       <PageHeader
@@ -114,7 +145,14 @@ export default function Expenses() {
         buttonText="Add Expense"
         onButtonClick={() => setIsModalOpen(true)}
         buttonIcon={Plus}
+        showButton={canManage}
       />
+
+      {!canManage && (
+        <div className="card">
+          <p className="text-sm text-gray-600">You have view-only access. Please contact an admin to add or update expenses.</p>
+        </div>
+      )}
 
       {/* Summary Card */}
       <div className="card">
@@ -141,29 +179,25 @@ export default function Expenses() {
       <div className="space-y-4">
         {expenses.map((expense) => (
           <div key={expense.id} className="card">
-            <div className="flex items-start justify-between">
-              <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0 p-2 bg-red-100 rounded-lg">
-                  <Receipt className="w-5 h-5 text-red-600" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="flex-shrink-0 p-3 bg-red-100 rounded-lg">
+                  <Receipt className="w-6 h-6 text-red-600" />
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-medium text-gray-900">{expense.description}</h3>
-                  <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                    <div className="flex items-center space-x-1">
-                      <Calendar className="w-4 h-4" />
-                      <span>{new Date(expense.date).toLocaleDateString()}</span>
-                    </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-lg font-medium text-gray-900 truncate">{expense.description}</h3>
+                  <div className="flex items-center space-x-4 mt-1">
+                    <span className="text-xs text-gray-500">
+                      {new Date(expense.date).toLocaleDateString()}
+                    </span>
                     {expense.category && (
-                      <div className="flex items-center space-x-1">
-                        <Tag className="w-4 h-4" />
-                        <span className="bg-gray-100 px-2 py-1 rounded text-xs">
-                          {expense.category}
-                        </span>
-                      </div>
+                      <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                        {expense.category}
+                      </span>
                     )}
                   </div>
                   {expense.notes && (
-                    <p className="mt-2 text-sm text-gray-600">{expense.notes}</p>
+                    <p className="text-xs text-gray-500 mt-1 truncate">{expense.notes}</p>
                   )}
                 </div>
               </div>
@@ -173,20 +207,22 @@ export default function Expenses() {
                     ₹{expense.amount?.toLocaleString() || 0}
                   </p>
                 </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => handleEdit(expense)}
-                    className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(expense.id)}
-                    className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                {canManage && (
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleEdit(expense)}
+                      className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(expense.id)}
+                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -202,7 +238,7 @@ export default function Expenses() {
       )}
 
       {/* Modal */}
-      {isModalOpen && (
+      {canManage && isModalOpen && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-10 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3">
