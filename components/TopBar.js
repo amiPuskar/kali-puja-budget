@@ -118,7 +118,6 @@ const TopBar = ({ onMenuClick, isMenuOpen }) => {
                 <p className="text-sm font-medium truncate">{user?.name || 'User'}</p>
                 <p className="text-xs text-gray-500 capitalize">{user?.originalRole}</p>
               </div>
-              <ChevronDown className="w-4 h-4 text-gray-500" />
             </button>
 
             {/* Profile Dropdown Menu */}
