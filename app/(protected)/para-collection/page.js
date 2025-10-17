@@ -12,7 +12,7 @@ import PageHeader from '@/components/PageHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function ParaCollection() {
-  const { paraCollections, setParaCollections } = useStore();
+  const { paraCollections, setParaCollections, members } = useStore();
   const { currentPuja } = usePuja();
   const { isAdmin } = useAuth();
   const canManage = isAdmin ? isAdmin() : false;
@@ -39,6 +39,14 @@ export default function ParaCollection() {
     
     return () => unsubscribe();
   }, [currentPuja, setParaCollections]);
+
+  // Load members data
+  useEffect(() => {
+    const unsubscribe = subscribeToCollection(COLLECTIONS.MEMBERS, (data) => {
+      // Members are already handled by the global store
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -211,7 +219,7 @@ export default function ParaCollection() {
                     </div>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{collection.collectedBy || '-'}</div>
+                    <div className="text-sm text-gray-900">{collection.collectedBy || 'Not specified'}</div>
                   </td>
                   <td className="px-4 py-4">
                     <div className="text-sm text-gray-900 max-w-xs truncate">
@@ -365,13 +373,18 @@ export default function ParaCollection() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Collected By
                 </label>
-                <input
-                  type="text"
+                <select
                   value={formData.collectedBy}
                   onChange={(e) => setFormData({ ...formData, collectedBy: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="Enter collector name"
-                />
+                >
+                  <option value="">Select a member</option>
+                  {members.map((member) => (
+                    <option key={member.id} value={member.name}>
+                      {member.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
