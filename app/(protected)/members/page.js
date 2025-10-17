@@ -8,6 +8,7 @@ import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { getAccessLevel, ROLE_OPTIONS } from '@/lib/roles';
 
 export default function Members() {
@@ -22,9 +23,65 @@ export default function Members() {
     email: '',
     password: ''
   });
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Validation functions
+  const validateField = (field, value) => {
+    const errors = { ...fieldErrors };
+    
+    switch (field) {
+      case 'contact':
+        if (!value.trim()) {
+          errors.contact = 'Contact number is required';
+        } else if (!/^\d{10}$/.test(value.trim())) {
+          errors.contact = 'Contact must be exactly 10 digits';
+        } else {
+          delete errors.contact;
+        }
+        break;
+      case 'email':
+        if (!value.trim()) {
+          errors.email = 'Email is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
+          errors.email = 'Please enter a valid email address';
+        } else {
+          delete errors.email;
+        }
+        break;
+      case 'name':
+        if (!value.trim()) {
+          errors.name = 'Name is required';
+        } else if (value.trim().length < 2) {
+          errors.name = 'Name must be at least 2 characters';
+        } else {
+          delete errors.name;
+        }
+        break;
+    }
+    
+    setFieldErrors(errors);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    
+    // Restrict contact field to only digits
+    if (name === 'contact') {
+      const numericValue = value.replace(/\D/g, ''); // Remove non-digits
+      setFormData(prev => ({ ...prev, [name]: numericValue }));
+      validateField(name, numericValue);
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+      validateField(name, value);
+    }
+  };
 
   useEffect(() => {
-    const unsubscribe = subscribeToCollection(COLLECTIONS.MEMBERS, setMembers);
+    const unsubscribe = subscribeToCollection(COLLECTIONS.MEMBERS, (data) => {
+      setMembers(data || []);
+      setIsLoading(false);
+    });
     return () => unsubscribe();
   }, [setMembers]);
 
@@ -127,6 +184,10 @@ export default function Members() {
     setIsModalOpen(false);
   };
 
+  if (isLoading) {
+    return <LoadingSpinner message="Loading members..." />;
+  }
+
   if (!isSuperAdmin()) {
     return (
       <div className="text-center py-12">
@@ -177,15 +238,22 @@ export default function Members() {
                 </div>
                         <div className="min-w-0 flex-1">
                           <h3 className="text-lg font-medium text-gray-900 truncate">{member.name}</h3>
-                          <p className="text-sm text-gray-500 truncate">{member.role}</p>
-                          <div className="flex items-center space-x-4 mt-1">
+                          <div className="flex items-center space-x-2 mt-1">
                             {member.contact && (
-                              <span className="text-xs text-gray-500">{member.contact}</span>
+                              <span className="text-sm text-gray-500">{member.contact}</span>
+                            )}
+                            {member.contact && member.email && (
+                              <span className="text-sm text-gray-400">|</span>
                             )}
                             {member.email && (
-                              <span className="text-xs text-gray-500">{member.email}</span>
+                              <span className="text-sm text-gray-500">{member.email}</span>
                             )}
                           </div>
+                          {member.approvedBy && (
+                            <div className="text-xs text-gray-400 mt-1">
+                              Added by: {member.approvedBy} • {member.approvedAt ? new Date(member.approvedAt).toLocaleDateString() : 'Unknown date'}
+                            </div>
+                          )}
                         </div>
               </div>
               <div className="flex space-x-2">
@@ -239,12 +307,16 @@ export default function Members() {
                   </label>
                   <input
                     type="text"
+                    name="name"
                     required
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="input-field"
+                    onChange={handleInputChange}
+                    className={`input-field ${fieldErrors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                     placeholder="Enter full name"
                   />
+                  {fieldErrors.name && (
+                    <p className="mt-1 text-sm text-red-600">{fieldErrors.name}</p>
+                  )}
                 </div>
                 
                 <div>
@@ -272,11 +344,16 @@ export default function Members() {
                   </label>
                   <input
                     type="tel"
+                    name="contact"
                     value={formData.contact}
-                    onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
-                    className="input-field"
-                    placeholder="Enter contact number"
+                    onChange={handleInputChange}
+                    className={`input-field ${fieldErrors.contact ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                    placeholder="Enter 10-digit contact number"
+                    maxLength="10"
                   />
+                  {fieldErrors.contact && (
+                    <p className="mt-1 text-sm text-red-600">{fieldErrors.contact}</p>
+                  )}
                 </div>
                 
                 <div>
@@ -285,11 +362,15 @@ export default function Members() {
                   </label>
                   <input
                     type="email"
+                    name="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="input-field"
+                    onChange={handleInputChange}
+                    className={`input-field ${fieldErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                     placeholder="Enter email address"
                   />
+                  {fieldErrors.email && (
+                    <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+                  )}
                 </div>
                   
                 <div>

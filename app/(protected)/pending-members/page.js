@@ -4,12 +4,11 @@ import { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, User, Mail, Phone, Clock, UserCheck } from 'lucide-react';
 import useStore from '@/store/useStore';
 import { subscribeToCollection, addDocument, updateDocument, deleteDocument } from '@/lib/firebase';
-import { db } from '@/lib/firebaseConfig';
-import { collection, getDocs } from 'firebase/firestore';
 import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { ROLE_OPTIONS } from '@/lib/roles';
 
 export default function PendingMembers() {
@@ -21,14 +20,14 @@ export default function PendingMembers() {
     role: 'Member',
     notes: ''
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.log('Subscribing to pending members collection:', COLLECTIONS.PENDING_MEMBERS);
     const unsubscribe = subscribeToCollection(COLLECTIONS.PENDING_MEMBERS, (data) => {
-      console.log('Pending members data received:', data);
-      console.log('Data length:', data.length);
-      setPendingMembers(data);
+      setPendingMembers(data || []);
+      setIsLoading(false);
     });
+    
     return () => unsubscribe();
   }, [setPendingMembers]);
 
@@ -76,7 +75,7 @@ export default function PendingMembers() {
 
       await addDocument(COLLECTIONS.MEMBERS, memberData);
 
-      // Update pending member status
+      // Update pending member status to approved
       await updateDocument(COLLECTIONS.PENDING_MEMBERS, selectedMember.id, {
         status: 'approved',
         approvedRole: approvalData.role,
@@ -98,6 +97,10 @@ export default function PendingMembers() {
   const approvedRequests = pendingMembers.filter(member => member.status === 'approved');
   const rejectedRequests = pendingMembers.filter(member => member.status === 'rejected');
 
+  if (isLoading) {
+    return <LoadingSpinner message="Loading pending members..." />;
+  }
+
   if (!isSuperAdmin()) {
     return (
       <div className="text-center py-12">
@@ -116,115 +119,41 @@ export default function PendingMembers() {
         showButton={false}
       />
 
-      {/* Debug Info */}
-      <div className="card bg-gray-50">
-        <h3 className="text-sm font-medium text-gray-900 mb-2">Debug Info</h3>
-        <p className="text-xs text-gray-600">Total pending members: {pendingMembers.length}</p>
-        <p className="text-xs text-gray-600">Collection: {COLLECTIONS.PENDING_MEMBERS}</p>
-        <div className="flex gap-2 mt-2">
-          <button 
-            onClick={() => console.log('Current pending members:', pendingMembers)}
-            className="px-3 py-1 bg-blue-500 text-white text-xs rounded"
-          >
-            Log to Console
-          </button>
-          <button 
-            onClick={() => {
-              console.log('Refreshing pending members...');
-              // Force re-subscription
-              const unsubscribe = subscribeToCollection(COLLECTIONS.PENDING_MEMBERS, (data) => {
-                console.log('Refreshed data:', data);
-                setPendingMembers(data);
-              });
-              setTimeout(() => unsubscribe(), 1000);
-            }}
-            className="px-3 py-1 bg-green-500 text-white text-xs rounded"
-          >
-            Refresh Data
-          </button>
-          <button 
-            onClick={async () => {
-              try {
-                const testData = {
-                  name: 'Test User ' + Date.now(),
-                  email: 'test' + Date.now() + '@example.com',
-                  contact: '1234567890',
-                  password: 'test123',
-                  status: 'pending',
-                  requestedAt: new Date().toISOString(),
-                  role: 'Member',
-                  approvedBy: null,
-                  approvedAt: null
-                };
-                console.log('Creating test member with data:', testData);
-                await addDocument(COLLECTIONS.PENDING_MEMBERS, testData);
-                console.log('Test member created successfully');
-                toast.success('Test member created');
-              } catch (error) {
-                console.error('Error creating test member:', error);
-                toast.error('Failed to create test member: ' + error.message);
-              }
-            }}
-            className="px-3 py-1 bg-yellow-500 text-white text-xs rounded"
-          >
-            Create Test Member
-          </button>
-          <button 
-            onClick={async () => {
-              try {
-                console.log('Direct Firebase query for pending members...');
-                const pendingMembersRef = collection(db, COLLECTIONS.PENDING_MEMBERS);
-                const snapshot = await getDocs(pendingMembersRef);
-                const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                console.log('Direct Firebase query result:', docs);
-                console.log('Number of documents found:', docs.length);
-                toast.success(`Found ${docs.length} pending members in database`);
-              } catch (error) {
-                console.error('Error querying Firebase directly:', error);
-                toast.error('Failed to query Firebase: ' + error.message);
-              }
-            }}
-            className="px-3 py-1 bg-purple-500 text-white text-xs rounded"
-          >
-            Direct Firebase Query
-          </button>
-        </div>
-      </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-        <div className="card">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 p-3 bg-yellow-100 rounded-lg">
-              <Clock className="w-6 h-6 text-yellow-600" />
+      {/* Summary Cards - Compact Design */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="card py-3">
+          <div className="flex items-center space-x-2">
+            <div className="flex-shrink-0 p-2 bg-yellow-100 rounded-md">
+              <Clock className="w-4 h-4 text-yellow-600" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Pending Requests</p>
-              <p className="text-2xl font-semibold text-gray-900">{pendingRequests.length}</p>
+            <div>
+              <p className="text-xs font-medium text-gray-600">Pending</p>
+              <p className="text-lg font-semibold text-gray-900">{pendingRequests.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="card">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 p-3 bg-green-100 rounded-lg">
-              <CheckCircle className="w-6 h-6 text-green-600" />
+        <div className="card py-3">
+          <div className="flex items-center space-x-2">
+            <div className="flex-shrink-0 p-2 bg-green-100 rounded-md">
+              <CheckCircle className="w-4 h-4 text-green-600" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Approved</p>
-              <p className="text-2xl font-semibold text-gray-900">{approvedRequests.length}</p>
+            <div>
+              <p className="text-xs font-medium text-gray-600">Approved</p>
+              <p className="text-lg font-semibold text-gray-900">{approvedRequests.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="card">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 p-3 bg-red-100 rounded-lg">
-              <XCircle className="w-6 h-6 text-red-600" />
+        <div className="card py-3">
+          <div className="flex items-center space-x-2">
+            <div className="flex-shrink-0 p-2 bg-red-100 rounded-md">
+              <XCircle className="w-4 h-4 text-red-600" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Rejected</p>
-              <p className="text-2xl font-semibold text-gray-900">{rejectedRequests.length}</p>
+            <div>
+              <p className="text-xs font-medium text-gray-600">Rejected</p>
+              <p className="text-lg font-semibold text-gray-900">{rejectedRequests.length}</p>
             </div>
           </div>
         </div>
@@ -285,26 +214,72 @@ export default function PendingMembers() {
         )}
       </div>
 
-      {/* Approved Requests */}
+      {/* Approved Requests - Compact */}
       {approvedRequests.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900">Recently Approved</h3>
-          {approvedRequests.map((member) => (
-            <div key={member.id} className="card bg-green-50 border-green-200">
-              <div className="flex items-center space-x-4">
-                <div className="flex-shrink-0 p-3 bg-green-100 rounded-lg">
-                  <UserCheck className="w-6 h-6 text-green-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h4 className="text-lg font-medium text-gray-900">{member.name}</h4>
-                  <p className="text-sm text-gray-600">{member.email}</p>
-                  <p className="text-xs text-green-600">
-                    Approved as {member.approvedRole} by {member.reviewedBy} on {new Date(member.reviewedAt).toLocaleDateString()}
-                  </p>
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-900">Recently Approved ({approvedRequests.length})</h3>
+          <div className="grid grid-cols-1 gap-2">
+            {approvedRequests.slice(0, 5).map((member) => (
+              <div key={member.id} className="card py-2 bg-green-50 border-green-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-gray-900">{member.name}</span>
+                        <span className="text-xs text-green-600">({member.approvedRole})</span>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Approved by: {member.reviewedBy || member.approvedBy || 'Unknown'}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-xs text-gray-500">
+                    {new Date(member.reviewedAt || member.approvedAt).toLocaleDateString()}
+                  </span>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+            {approvedRequests.length > 5 && (
+              <p className="text-xs text-gray-500 text-center py-1">
+                +{approvedRequests.length - 5} more approved
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Rejected Requests - Compact */}
+      {rejectedRequests.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-900">Recently Rejected ({rejectedRequests.length})</h3>
+          <div className="grid grid-cols-1 gap-2">
+            {rejectedRequests.slice(0, 5).map((member) => (
+              <div key={member.id} className="card py-2 bg-red-50 border-red-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <XCircle className="w-4 h-4 text-red-600" />
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-gray-900">{member.name}</span>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Rejected by: {member.reviewedBy || 'Unknown'}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-xs text-gray-500">
+                    {new Date(member.reviewedAt).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            ))}
+            {rejectedRequests.length > 5 && (
+              <p className="text-xs text-gray-500 text-center py-1">
+                +{rejectedRequests.length - 5} more rejected
+              </p>
+            )}
+          </div>
         </div>
       )}
 

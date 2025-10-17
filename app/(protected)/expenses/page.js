@@ -9,6 +9,7 @@ import { COLLECTIONS } from '@/lib/firebase';
 import { usePuja } from '@/contexts/PujaContext';
 import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function Expenses() {
   const { expenses, setExpenses, budgetItems, setBudgetItems, budgetAllocations, setBudgetAllocations } = useStore();
@@ -24,15 +25,35 @@ export default function Expenses() {
     date: new Date().toISOString().split('T')[0],
     notes: ''
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let loadedCount = 0;
+    const totalSubscriptions = currentPuja ? 3 : 1; // budget items + (expenses + allocations if puja selected)
+
+    const checkLoadingComplete = () => {
+      loadedCount++;
+      if (loadedCount >= totalSubscriptions) {
+        setIsLoading(false);
+      }
+    };
+
     // Subscribe to budget items (not puja-specific)
-    const unsubscribeBudgetItems = subscribeToCollection(COLLECTIONS.BUDGET_ITEMS, setBudgetItems);
+    const unsubscribeBudgetItems = subscribeToCollection(COLLECTIONS.BUDGET_ITEMS, (data) => {
+      setBudgetItems(data || []);
+      checkLoadingComplete();
+    });
 
     // Subscribe to puja-specific data when a puja is selected
     if (currentPuja) {
-      const unsubscribeExpenses = subscribeToCollection(`${COLLECTIONS.EXPENSES}_${currentPuja.id}`, setExpenses);
-      const unsubscribeAllocations = subscribeToCollection(`${COLLECTIONS.BUDGET_ALLOCATIONS}_${currentPuja.id}`, setBudgetAllocations);
+      const unsubscribeExpenses = subscribeToCollection(`${COLLECTIONS.EXPENSES}_${currentPuja.id}`, (data) => {
+        setExpenses(data || []);
+        checkLoadingComplete();
+      });
+      const unsubscribeAllocations = subscribeToCollection(`${COLLECTIONS.BUDGET_ALLOCATIONS}_${currentPuja.id}`, (data) => {
+        setBudgetAllocations(data || []);
+        checkLoadingComplete();
+      });
 
       return () => {
         unsubscribeBudgetItems();
@@ -126,6 +147,10 @@ export default function Expenses() {
   const categories = (budgetItems || [])
     .filter(item => allocatedItemIds.has(item.id))
     .map(item => item.name);
+
+  if (isLoading) {
+    return <LoadingSpinner message="Loading expenses..." />;
+  }
 
   if (!currentPuja) {
     return (

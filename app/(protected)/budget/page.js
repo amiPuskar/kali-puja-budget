@@ -9,6 +9,7 @@ import { COLLECTIONS } from '@/lib/firebase';
 import { usePuja } from '@/contexts/PujaContext';
 import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function Budget() {
   const { 
@@ -31,14 +32,31 @@ export default function Budget() {
     allocatedAmount: '',
     notes: ''
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let loadedCount = 0;
+    const totalSubscriptions = currentPuja ? 2 : 1; // budget items + (allocations if puja selected)
+
+    const checkLoadingComplete = () => {
+      loadedCount++;
+      if (loadedCount >= totalSubscriptions) {
+        setIsLoading(false);
+      }
+    };
+
     // Subscribe to budget items (not puja-specific)
-    const unsubscribeBudgetItems = subscribeToCollection(COLLECTIONS.BUDGET_ITEMS, setBudgetItems);
+    const unsubscribeBudgetItems = subscribeToCollection(COLLECTIONS.BUDGET_ITEMS, (data) => {
+      setBudgetItems(data || []);
+      checkLoadingComplete();
+    });
     
     if (currentPuja) {
       // Subscribe to budget allocations for current puja
-      const unsubscribeBudgetAllocations = subscribeToCollection(`${COLLECTIONS.BUDGET_ALLOCATIONS}_${currentPuja.id}`, setBudgetAllocations);
+      const unsubscribeBudgetAllocations = subscribeToCollection(`${COLLECTIONS.BUDGET_ALLOCATIONS}_${currentPuja.id}`, (data) => {
+        setBudgetAllocations(data || []);
+        checkLoadingComplete();
+      });
       
       return () => {
         unsubscribeBudgetItems();
@@ -133,6 +151,10 @@ export default function Budget() {
   };
 
   // Members can view read-only; admins can manage
+
+  if (isLoading) {
+    return <LoadingSpinner message="Loading budget..." />;
+  }
 
   if (!currentPuja) {
     return (

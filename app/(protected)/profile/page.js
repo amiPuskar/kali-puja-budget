@@ -14,6 +14,49 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [profile, setProfile] = useState({ name: '', email: '', contact: '', role: '' });
   const [passwordForm, setPasswordForm] = useState({ next: '', confirm: '' });
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  // Validation functions
+  const validateField = (field, value) => {
+    const errors = { ...fieldErrors };
+    
+    switch (field) {
+      case 'contact':
+        if (!value.trim()) {
+          errors.contact = 'Contact number is required';
+        } else if (!/^\d{10}$/.test(value.trim())) {
+          errors.contact = 'Contact must be exactly 10 digits';
+        } else {
+          delete errors.contact;
+        }
+        break;
+      case 'email':
+        if (!value.trim()) {
+          errors.email = 'Email is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
+          errors.email = 'Please enter a valid email address';
+        } else {
+          delete errors.email;
+        }
+        break;
+    }
+    
+    setFieldErrors(errors);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    
+    // Restrict contact field to only digits
+    if (name === 'contact') {
+      const numericValue = value.replace(/\D/g, ''); // Remove non-digits
+      setProfile(prev => ({ ...prev, [name]: numericValue }));
+      validateField(name, numericValue);
+    } else {
+      setProfile(prev => ({ ...prev, [name]: value }));
+      validateField(name, value);
+    }
+  };
 
   useEffect(() => {
     const unsub = subscribeToCollection(COLLECTIONS.MEMBERS, setMembers);
@@ -161,13 +204,17 @@ export default function ProfilePage() {
               </div>
               <input
                 type="email"
+                name="email"
                 value={profile.email}
-                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                className="input-field pl-10"
+                onChange={handleInputChange}
+                className={`input-field pl-10 ${fieldErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                 placeholder="Enter email address"
                 disabled={!canEdit}
               />
             </div>
+            {fieldErrors.email && (
+              <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
@@ -177,13 +224,18 @@ export default function ProfilePage() {
               </div>
               <input
                 type="tel"
+                name="contact"
                 value={profile.contact}
-                onChange={(e) => setProfile({ ...profile, contact: e.target.value })}
-                className="input-field pl-10"
-                placeholder="Enter contact number"
+                onChange={handleInputChange}
+                className={`input-field pl-10 ${fieldErrors.contact ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                placeholder="Enter 10-digit contact number"
+                maxLength="10"
                 disabled={!canEdit}
               />
             </div>
+            {fieldErrors.contact && (
+              <p className="mt-1 text-sm text-red-600">{fieldErrors.contact}</p>
+            )}
           </div>
         </div>
         <div className="pt-2">
