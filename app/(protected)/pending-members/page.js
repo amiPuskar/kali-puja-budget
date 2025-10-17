@@ -40,8 +40,12 @@ export default function PendingMembers() {
   const handleReject = async (member) => {
     if (window.confirm(`Are you sure you want to reject ${member.name}'s membership request?`)) {
       try {
-        // Delete the pending member document
-        await deleteDocument(COLLECTIONS.PENDING_MEMBERS, member.id);
+        await updateDocument(COLLECTIONS.PENDING_MEMBERS, member.id, {
+          status: 'rejected',
+          reviewedBy: user.name,
+          reviewedAt: new Date().toISOString(),
+          rejectionNotes: 'Rejected by Super Admin'
+        });
         toast.success('Membership request rejected');
       } catch (error) {
         console.error('Error rejecting member:', error);
@@ -68,8 +72,14 @@ export default function PendingMembers() {
 
       await addDocument(COLLECTIONS.MEMBERS, memberData);
 
-      // Remove from pending members (delete the document)
-      await deleteDocument(COLLECTIONS.PENDING_MEMBERS, selectedMember.id);
+      // Update pending member status to approved
+      await updateDocument(COLLECTIONS.PENDING_MEMBERS, selectedMember.id, {
+        status: 'approved',
+        approvedRole: approvalData.role,
+        reviewedBy: user.name,
+        reviewedAt: new Date().toISOString(),
+        approvalNotes: approvalData.notes
+      });
 
       toast.success('Member approved and added to the system');
       setShowApprovalModal(false);
@@ -80,8 +90,9 @@ export default function PendingMembers() {
     }
   };
 
-  // All pending members are shown (no status filtering needed since approved/rejected are deleted)
-  const pendingRequests = pendingMembers;
+  const pendingRequests = pendingMembers.filter(member => member.status === 'pending');
+  const approvedRequests = pendingMembers.filter(member => member.status === 'approved');
+  const rejectedRequests = pendingMembers.filter(member => member.status === 'rejected');
 
   if (!isSuperAdmin()) {
     return (
@@ -102,40 +113,40 @@ export default function PendingMembers() {
       />
 
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-        <div className="card">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 p-3 bg-yellow-100 rounded-lg">
-              <Clock className="w-6 h-6 text-yellow-600" />
+      {/* Summary Cards - Compact Design */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="card py-3">
+          <div className="flex items-center space-x-2">
+            <div className="flex-shrink-0 p-2 bg-yellow-100 rounded-md">
+              <Clock className="w-4 h-4 text-yellow-600" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Pending Requests</p>
-              <p className="text-2xl font-semibold text-gray-900">{pendingRequests.length}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 p-3 bg-green-100 rounded-lg">
-              <CheckCircle className="w-6 h-6 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Approved</p>
-              <p className="text-2xl font-semibold text-gray-900">{approvedRequests.length}</p>
+            <div>
+              <p className="text-xs font-medium text-gray-600">Pending</p>
+              <p className="text-lg font-semibold text-gray-900">{pendingRequests.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="card">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 p-3 bg-red-100 rounded-lg">
-              <XCircle className="w-6 h-6 text-red-600" />
+        <div className="card py-3">
+          <div className="flex items-center space-x-2">
+            <div className="flex-shrink-0 p-2 bg-green-100 rounded-md">
+              <CheckCircle className="w-4 h-4 text-green-600" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Rejected</p>
-              <p className="text-2xl font-semibold text-gray-900">{rejectedRequests.length}</p>
+            <div>
+              <p className="text-xs font-medium text-gray-600">Approved</p>
+              <p className="text-lg font-semibold text-gray-900">{approvedRequests.length}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card py-3">
+          <div className="flex items-center space-x-2">
+            <div className="flex-shrink-0 p-2 bg-red-100 rounded-md">
+              <XCircle className="w-4 h-4 text-red-600" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-600">Rejected</p>
+              <p className="text-lg font-semibold text-gray-900">{rejectedRequests.length}</p>
             </div>
           </div>
         </div>
@@ -196,26 +207,72 @@ export default function PendingMembers() {
         )}
       </div>
 
-      {/* Approved Requests */}
+      {/* Approved Requests - Compact */}
       {approvedRequests.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900">Recently Approved</h3>
-          {approvedRequests.map((member) => (
-            <div key={member.id} className="card bg-green-50 border-green-200">
-              <div className="flex items-center space-x-4">
-                <div className="flex-shrink-0 p-3 bg-green-100 rounded-lg">
-                  <UserCheck className="w-6 h-6 text-green-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h4 className="text-lg font-medium text-gray-900">{member.name}</h4>
-                  <p className="text-sm text-gray-600">{member.email}</p>
-                  <p className="text-xs text-green-600">
-                    Approved as {member.approvedRole} by {member.reviewedBy} on {new Date(member.reviewedAt).toLocaleDateString()}
-                  </p>
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-900">Recently Approved ({approvedRequests.length})</h3>
+          <div className="grid grid-cols-1 gap-2">
+            {approvedRequests.slice(0, 5).map((member) => (
+              <div key={member.id} className="card py-2 bg-green-50 border-green-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-gray-900">{member.name}</span>
+                        <span className="text-xs text-green-600">({member.approvedRole})</span>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Approved by: {member.reviewedBy || member.approvedBy || 'Unknown'}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-xs text-gray-500">
+                    {new Date(member.reviewedAt || member.approvedAt).toLocaleDateString()}
+                  </span>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+            {approvedRequests.length > 5 && (
+              <p className="text-xs text-gray-500 text-center py-1">
+                +{approvedRequests.length - 5} more approved
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Rejected Requests - Compact */}
+      {rejectedRequests.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-900">Recently Rejected ({rejectedRequests.length})</h3>
+          <div className="grid grid-cols-1 gap-2">
+            {rejectedRequests.slice(0, 5).map((member) => (
+              <div key={member.id} className="card py-2 bg-red-50 border-red-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <XCircle className="w-4 h-4 text-red-600" />
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-gray-900">{member.name}</span>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Rejected by: {member.reviewedBy || 'Unknown'}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-xs text-gray-500">
+                    {new Date(member.reviewedAt).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            ))}
+            {rejectedRequests.length > 5 && (
+              <p className="text-xs text-gray-500 text-center py-1">
+                +{rejectedRequests.length - 5} more rejected
+              </p>
+            )}
+          </div>
         </div>
       )}
 

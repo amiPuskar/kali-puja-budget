@@ -240,6 +240,11 @@ export default function Members() {
                               <span className="text-sm text-gray-500">{member.email}</span>
                             )}
                           </div>
+                          {member.approvedBy && (
+                            <div className="text-xs text-gray-400 mt-1">
+                              Added by: {member.approvedBy} • {member.approvedAt ? new Date(member.approvedAt).toLocaleDateString() : 'Unknown date'}
+                            </div>
+                          )}
                         </div>
               </div>
               <div className="flex space-x-2">
