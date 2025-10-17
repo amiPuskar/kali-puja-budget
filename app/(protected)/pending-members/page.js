@@ -8,6 +8,7 @@ import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { ROLE_OPTIONS } from '@/lib/roles';
 
 export default function PendingMembers() {
@@ -19,10 +20,12 @@ export default function PendingMembers() {
     role: 'Member',
     notes: ''
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = subscribeToCollection(COLLECTIONS.PENDING_MEMBERS, (data) => {
       setPendingMembers(data || []);
+      setIsLoading(false);
     });
     
     return () => unsubscribe();
@@ -93,6 +96,10 @@ export default function PendingMembers() {
   const pendingRequests = pendingMembers.filter(member => member.status === 'pending');
   const approvedRequests = pendingMembers.filter(member => member.status === 'approved');
   const rejectedRequests = pendingMembers.filter(member => member.status === 'rejected');
+
+  if (isLoading) {
+    return <LoadingSpinner message="Loading pending members..." />;
+  }
 
   if (!isSuperAdmin()) {
     return (

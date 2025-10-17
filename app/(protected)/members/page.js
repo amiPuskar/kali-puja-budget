@@ -8,6 +8,7 @@ import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { getAccessLevel, ROLE_OPTIONS } from '@/lib/roles';
 
 export default function Members() {
@@ -23,6 +24,7 @@ export default function Members() {
     password: ''
   });
   const [fieldErrors, setFieldErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
 
   // Validation functions
   const validateField = (field, value) => {
@@ -76,7 +78,10 @@ export default function Members() {
   };
 
   useEffect(() => {
-    const unsubscribe = subscribeToCollection(COLLECTIONS.MEMBERS, setMembers);
+    const unsubscribe = subscribeToCollection(COLLECTIONS.MEMBERS, (data) => {
+      setMembers(data || []);
+      setIsLoading(false);
+    });
     return () => unsubscribe();
   }, [setMembers]);
 
@@ -178,6 +183,10 @@ export default function Members() {
     setEditingMember(null);
     setIsModalOpen(false);
   };
+
+  if (isLoading) {
+    return <LoadingSpinner message="Loading members..." />;
+  }
 
   if (!isSuperAdmin()) {
     return (

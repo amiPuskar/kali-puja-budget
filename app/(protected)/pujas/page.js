@@ -9,6 +9,7 @@ import { COLLECTIONS } from '@/lib/firebase';
 import { usePuja } from '@/contexts/PujaContext';
 import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function Pujas() {
   const { members, setMembers } = useStore();
@@ -25,9 +26,13 @@ export default function Pujas() {
     managerId: '',
     status: 'pending'
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = subscribeToCollection(COLLECTIONS.MEMBERS, setMembers);
+    const unsubscribe = subscribeToCollection(COLLECTIONS.MEMBERS, (data) => {
+      setMembers(data || []);
+      setIsLoading(false);
+    });
     return () => unsubscribe();
   }, [setMembers]);
 
@@ -124,6 +129,10 @@ export default function Pujas() {
       default: return <Clock className="w-4 h-4" />;
     }
   };
+
+  if (isLoading) {
+    return <LoadingSpinner message="Loading pujas..." />;
+  }
 
   if (!isSuperAdmin()) {
     return (
