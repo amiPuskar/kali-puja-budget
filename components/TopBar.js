@@ -71,7 +71,7 @@ const TopBar = ({ onMenuClick, isMenuOpen }) => {
           </button>
 
           {/* Puja Selector - responsive dropdown */}
-          {currentPuja && (
+          {pujas.length > 0 && (
             <div className="relative">
               <button
                 onClick={() => setShowPujaSelector(!showPujaSelector)}
@@ -79,7 +79,7 @@ const TopBar = ({ onMenuClick, isMenuOpen }) => {
               >
                 <Calendar className="w-4 h-4 text-primary-600 flex-shrink-0" />
                 <div className="text-sm font-medium text-primary-900 truncate">
-                  {currentPuja.name}
+                  {currentPuja ? currentPuja.name : 'Select Puja'}
                 </div>
                 <ChevronDown className="w-4 h-4 text-primary-600 flex-shrink-0" />
               </button>
@@ -99,7 +99,7 @@ const TopBar = ({ onMenuClick, isMenuOpen }) => {
                           setShowPujaSelector(false);
                         }}
                         className={`w-full text-left px-3 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 ${
-                          currentPuja.id === puja.id ? 'bg-primary-50 text-primary-700' : 'text-gray-700'
+                          currentPuja && currentPuja.id === puja.id ? 'bg-primary-50 text-primary-700' : 'text-gray-700'
                         }`}
                       >
                         <div className="flex items-center justify-between">
