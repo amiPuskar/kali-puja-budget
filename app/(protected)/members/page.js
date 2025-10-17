@@ -11,7 +11,7 @@ import PageHeader from '@/components/PageHeader';
 
 export default function Members() {
   const { members, setMembers } = useStore();
-  const { isAdmin } = useAuth();
+  const { isSuperAdmin } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
   const [formData, setFormData] = useState({
@@ -19,7 +19,6 @@ export default function Members() {
     role: '',
     contact: '',
     email: '',
-    username: '',
     password: ''
   });
 
@@ -39,13 +38,13 @@ export default function Members() {
         await updateDocument(COLLECTIONS.MEMBERS, editingMember.id, memberData);
         setEditingMember(null);
         setIsModalOpen(false);
-        setFormData({ name: '', role: '', contact: '', email: '', username: '', password: '' });
+        setFormData({ name: '', role: '', contact: '', email: '', password: '' });
         toast.success('Member updated');
       } else {
         await addDocument(COLLECTIONS.MEMBERS, memberData);
         setEditingMember(null);
         setIsModalOpen(false);
-        setFormData({ name: '', role: '', contact: '', email: '', username: '', password: '' });
+        setFormData({ name: '', role: '', contact: '', email: '', password: '' });
         toast.success('Member added');
       }
     } catch (error) {
@@ -66,7 +65,6 @@ export default function Members() {
       role: member.role || '',
       contact: member.contact || '',
       email: member.email || '',
-      username: member.username || '',
       password: ''
     });
     setIsModalOpen(true);
@@ -88,19 +86,18 @@ export default function Members() {
       role: '',
       contact: '',
       email: '',
-      username: '',
       password: ''
     });
     setEditingMember(null);
     setIsModalOpen(false);
   };
 
-  if (!isAdmin()) {
+  if (!isSuperAdmin()) {
     return (
       <div className="text-center py-12">
         <User className="mx-auto h-12 w-12 text-gray-400" />
         <h3 className="mt-2 text-sm font-medium text-gray-900">Access Denied</h3>
-        <p className="mt-1 text-sm text-gray-500">Only admins can manage club members.</p>
+        <p className="mt-1 text-sm text-gray-500">Only Super Admin can manage club members.</p>
       </div>
     );
   }
@@ -236,21 +233,6 @@ export default function Members() {
                   </select>
                 </div>
                 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Username
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.username}
-                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                      className="input-field"
-                      placeholder="Unique username"
-                    />
-                  </div>
-                  
-                
-                
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Contact Number
@@ -277,18 +259,18 @@ export default function Members() {
                   />
                 </div>
                   
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Password
-                    </label>
-                    <input
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="input-field"
-                      placeholder="Set initial password"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="input-field"
+                    placeholder="Set initial password"
+                  />
+                </div>
                 
                 <div className="flex space-x-3 pt-4">
                   <button type="submit" className="btn-primary flex-1">

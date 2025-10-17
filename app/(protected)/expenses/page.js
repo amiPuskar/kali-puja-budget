@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
 
 export default function Expenses() {
-  const { expenses, setExpenses, budgetItems, setBudgetItems, getBudgetCategories } = useStore();
+  const { expenses, setExpenses, budgetItems, setBudgetItems, budgetAllocations, setBudgetAllocations } = useStore();
   const { currentPuja } = usePuja();
   const { isAdmin } = useAuth();
   const canManage = isAdmin();
@@ -28,21 +28,23 @@ export default function Expenses() {
   useEffect(() => {
     // Subscribe to budget items (not puja-specific)
     const unsubscribeBudgetItems = subscribeToCollection(COLLECTIONS.BUDGET_ITEMS, setBudgetItems);
-    
+
+    // Subscribe to puja-specific data when a puja is selected
     if (currentPuja) {
-      // Subscribe to expenses for current puja
       const unsubscribeExpenses = subscribeToCollection(`${COLLECTIONS.EXPENSES}_${currentPuja.id}`, setExpenses);
-      
+      const unsubscribeAllocations = subscribeToCollection(`${COLLECTIONS.BUDGET_ALLOCATIONS}_${currentPuja.id}`, setBudgetAllocations);
+
       return () => {
         unsubscribeBudgetItems();
         unsubscribeExpenses();
+        unsubscribeAllocations();
       };
     }
-    
+
     return () => {
       unsubscribeBudgetItems();
     };
-  }, [currentPuja, setExpenses, setBudgetItems]);
+  }, [currentPuja, setExpenses, setBudgetItems, setBudgetAllocations]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -115,17 +117,15 @@ export default function Expenses() {
 
   const totalSpent = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
 
-  // Get categories from budget items plus default categories
-  const budgetCategories = getBudgetCategories();
-  const defaultCategories = [
-    'Decoration',
-    'Food & Catering',
-    'Puja Materials',
-    'Sound & Lighting',
-    'Transportation',
-    'Miscellaneous'
-  ];
-  const categories = [...budgetCategories, ...defaultCategories];
+  // Only show categories for budget items that have allocations for the current puja
+  const allocatedItemIds = new Set(
+    (budgetAllocations || [])
+      .filter(a => a.pujaId === currentPuja?.id)
+      .map(a => a.budgetItemId)
+  );
+  const categories = (budgetItems || [])
+    .filter(item => allocatedItemIds.has(item.id))
+    .map(item => item.name);
 
   if (!currentPuja) {
     return (

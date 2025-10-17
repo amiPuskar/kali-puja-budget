@@ -23,7 +23,7 @@ export default function Pujas() {
     endDate: '',
     description: '',
     managerId: '',
-    status: 'active'
+    status: 'pending'
   });
 
   useEffect(() => {
@@ -37,10 +37,16 @@ export default function Pujas() {
       const manager = members.find(m => m.id === formData.managerId);
       const pujaData = {
         ...formData,
-        startDate: new Date(formData.startDate).toISOString(),
-        endDate: new Date(formData.endDate).toISOString(),
+        // Only set dates if provided
+        startDate: formData.startDate ? new Date(formData.startDate).toISOString() : '',
+        endDate: formData.endDate ? new Date(formData.endDate).toISOString() : '',
         managerName: manager?.name || ''
       };
+
+      // Only super admin can set status to completed
+      if (!isSuperAdmin() && pujaData.status === 'completed') {
+        pujaData.status = 'active';
+      }
 
       if (editingPuja) {
         updatePuja(editingPuja.id, pujaData);
@@ -65,7 +71,7 @@ export default function Pujas() {
       endDate: puja.endDate ? new Date(puja.endDate).toISOString().split('T')[0] : '',
       description: puja.description || '',
       managerId: puja.managerId || '',
-      status: puja.status || 'active'
+      status: puja.status || 'pending'
     });
     setIsModalOpen(true);
   };
@@ -95,7 +101,7 @@ export default function Pujas() {
       endDate: '',
       description: '',
       managerId: '',
-      status: 'active'
+      status: 'pending'
     });
     setEditingPuja(null);
     setIsModalOpen(false);
@@ -105,7 +111,7 @@ export default function Pujas() {
     switch (status) {
       case 'active': return 'bg-green-100 text-green-600';
       case 'completed': return 'bg-gray-100 text-gray-600';
-      case 'planned': return 'bg-blue-100 text-blue-600';
+      case 'pending': return 'bg-blue-100 text-blue-600';
       default: return 'bg-gray-100 text-gray-600';
     }
   };
@@ -114,7 +120,7 @@ export default function Pujas() {
     switch (status) {
       case 'active': return <CheckCircle className="w-4 h-4" />;
       case 'completed': return <CheckCircle className="w-4 h-4" />;
-      case 'planned': return <Clock className="w-4 h-4" />;
+      case 'pending': return <Clock className="w-4 h-4" />;
       default: return <Clock className="w-4 h-4" />;
     }
   };
@@ -178,9 +184,11 @@ export default function Pujas() {
                       <span className="text-xs text-gray-600">
                         {puja.year}
                       </span>
-                      <span className="text-xs text-gray-600">
-                        {new Date(puja.startDate).toLocaleDateString()} - {new Date(puja.endDate).toLocaleDateString()}
-                      </span>
+                      {puja.startDate && puja.endDate && (
+                        <span className="text-xs text-gray-600">
+                          {new Date(puja.startDate).toLocaleDateString()} - {new Date(puja.endDate).toLocaleDateString()}
+                        </span>
+                      )}
                       {manager && (
                         <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
                           Manager: {manager.name}
@@ -279,11 +287,10 @@ export default function Pujas() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Start Date *
+                    Start Date (optional)
                   </label>
                   <input
                     type="date"
-                    required
                     value={formData.startDate}
                     onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                     className="input-field"
@@ -291,11 +298,10 @@ export default function Pujas() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    End Date *
+                    End Date (optional)
                   </label>
                   <input
                     type="date"
-                    required
                     value={formData.endDate}
                     onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                     className="input-field"
@@ -344,9 +350,9 @@ export default function Pujas() {
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                   className="input-field"
                 >
-                  <option value="planned">Planned</option>
+                  <option value="pending">Pending</option>
                   <option value="active">Active</option>
-                  <option value="completed">Completed</option>
+                  <option value="completed" disabled={!isSuperAdmin()}>Completed</option>
                 </select>
               </div>
 

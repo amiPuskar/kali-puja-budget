@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Home, 
   UserCheck, 
@@ -18,21 +19,22 @@ import {
 
 const Sidebar = ({ isOpen, onClose }) => {
   const pathname = usePathname();
+  const { isAdmin, isSuperAdmin } = useAuth();
 
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: Home },
-    { name: 'Puja Management', href: '/pujas', icon: CalendarDays },
-    { name: 'Contributions', href: '/contributions', icon: UserCheck },
-    { name: 'Members', href: '/members', icon: Users },
-    { name: 'Budget Items', href: '/budget-items', icon: Target },
-    { name: 'Budget Allocations', href: '/budget', icon: DollarSign },
-    { name: 'Expenses', href: '/expenses', icon: Receipt },
-    { name: 'Events', href: '/events', icon: Calendar },
-    { name: 'Tasks', href: '/tasks', icon: CheckSquare },
-    { name: 'Inventory', href: '/inventory', icon: Package },
-    { name: 'Sponsors', href: '/sponsors', icon: Gift },
-    { name: 'Access Denied', href: '/unauthorized', icon: UserCheck },
-  ];
+    { name: 'Dashboard', href: '/', icon: Home, visible: true },
+    { name: 'Puja Management', href: '/pujas', icon: CalendarDays, visible: isSuperAdmin() },
+    { name: 'Contributions', href: '/contributions', icon: UserCheck, visible: true },
+    { name: 'Members', href: '/members', icon: Users, visible: isSuperAdmin() },
+    { name: 'Budget Items', href: '/budget-items', icon: Target, visible: isAdmin() },
+    // Make these visible to all roles (users will have view-only in-page)
+    { name: 'Budget Allocations', href: '/budget', icon: DollarSign, visible: true },
+    { name: 'Expenses', href: '/expenses', icon: Receipt, visible: true },
+    { name: 'Events', href: '/events', icon: Calendar, visible: true },
+    { name: 'Tasks', href: '/tasks', icon: CheckSquare, visible: true },
+    { name: 'Inventory', href: '/inventory', icon: Package, visible: true },
+    { name: 'Sponsors', href: '/sponsors', icon: Gift, visible: true },
+  ].filter(item => item.visible);
 
   const isActive = (href) => {
     if (href === '/') {
@@ -52,6 +54,19 @@ const Sidebar = ({ isOpen, onClose }) => {
         isOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="flex flex-col h-full">
+          {/* Header with title */}
+          <div className="px-4 py-6 border-b border-gray-200">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <span className="text-white font-bold text-sm">PB</span>
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-lg font-bold text-gray-900">Puja Budget</h1>
+                <p className="text-xs text-gray-500">Management System</p>
+              </div>
+            </div>
+          </div>
+
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2">
             {navigation.map((item) => {

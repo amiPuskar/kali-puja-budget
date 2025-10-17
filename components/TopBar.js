@@ -26,7 +26,7 @@ const TopBar = ({ onMenuClick, isMenuOpen }) => {
   return (
     <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4 sticky top-0 z-30">
       <div className="flex items-center justify-between">
-        {/* Left side - Menu button and title */}
+        {/* Left side - Menu button and Puja Selector */}
         <div className="flex items-center space-x-3 sm:space-x-4">
           {/* Mobile menu button */}
           <button
@@ -40,45 +40,27 @@ const TopBar = ({ onMenuClick, isMenuOpen }) => {
             )}
           </button>
 
-          {/* Title */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-bold text-sm">PB</span>
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">Puja Budget</h1>
-              <p className="text-xs text-gray-500 hidden sm:block">Management System</p>
-            </div>
-          </div>
-
-          {/* Puja Selector */}
+          {/* Puja Selector - responsive dropdown */}
           {currentPuja && (
-            <div className="hidden md:block relative">
+            <div className="relative">
               <button
                 onClick={() => setShowPujaSelector(!showPujaSelector)}
-                className="flex items-center space-x-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="flex items-center space-x-2 px-3 py-2 bg-primary-50 hover:bg-primary-100 border border-primary-200 rounded-lg transition-colors min-w-0"
               >
-                <Calendar className="w-4 h-4 text-gray-600" />
-                <div className="text-left">
-                  <div className="text-sm font-medium text-gray-900 truncate max-w-32">
-                    {currentPuja.name}
-                  </div>
-                  {currentPuja.managerId && (
-                    <div className="text-xs text-gray-500 truncate">
-                      Manager: {currentPuja.managerName || 'Assigned'}
-                    </div>
-                  )}
+                <Calendar className="w-4 h-4 text-primary-600 flex-shrink-0" />
+                <div className="text-sm font-medium text-primary-900 truncate min-w-0 flex-1">
+                  {currentPuja.name}
                 </div>
-                <ChevronDown className="w-4 h-4 text-gray-600" />
+                <ChevronDown className="w-4 h-4 text-primary-600 flex-shrink-0" />
               </button>
 
-              {/* Puja Dropdown */}
+              {/* Puja Dropdown - responsive */}
               {showPujaSelector && (
-                <div className="absolute left-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 z-50">
+                <div className="absolute left-0 mt-2 w-72 sm:w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50">
                   <div className="p-3 border-b border-gray-200">
                     <h3 className="text-sm font-semibold text-gray-900">Select Puja</h3>
                   </div>
-                  <div className="max-h-48 overflow-y-auto custom-scrollbar">
+                  <div className="max-h-64 overflow-y-auto custom-scrollbar">
                     {pujas.map((puja) => (
                       <button
                         key={puja.id}
@@ -86,19 +68,21 @@ const TopBar = ({ onMenuClick, isMenuOpen }) => {
                           switchPuja(puja);
                           setShowPujaSelector(false);
                         }}
-                        className={`w-full text-left px-3 py-2 hover:bg-gray-50 transition-colors ${
+                        className={`w-full text-left px-3 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 ${
                           currentPuja.id === puja.id ? 'bg-primary-50 text-primary-700' : 'text-gray-700'
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium">{puja.name}</p>
-                            <p className="text-xs text-gray-500">{puja.year}</p>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate">{puja.name}</p>
+                            <p className="text-xs text-gray-500 mt-1">{puja.year}</p>
                             {puja.managerId && (
-                              <p className="text-xs text-blue-600">Manager: {puja.managerName || 'Assigned'}</p>
+                              <p className="text-xs text-blue-600 mt-1 truncate">
+                                Manager: {puja.managerName || 'Assigned'}
+                              </p>
                             )}
                           </div>
-                          <span className={`text-xs px-2 py-1 rounded ${
+                          <span className={`text-xs px-2 py-1 rounded flex-shrink-0 ml-2 ${
                             puja.status === 'active' ? 'bg-green-100 text-green-600' :
                             puja.status === 'completed' ? 'bg-gray-100 text-gray-600' :
                             'bg-yellow-100 text-yellow-600'
@@ -115,53 +99,8 @@ const TopBar = ({ onMenuClick, isMenuOpen }) => {
           )}
         </div>
 
-        {/* Right side - Notifications, Profile, Logout */}
+        {/* Right side - Profile, Logout */}
         <div className="flex items-center space-x-1 sm:space-x-2">
-          {/* Notifications */}
-          <div className="relative">
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors relative"
-            >
-              <Bell className="w-5 h-5" />
-              {notifications.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-                  {notifications.length}
-                </span>
-              )}
-            </button>
-
-            {/* Notifications dropdown */}
-            {showNotifications && (
-              <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50">
-                <div className="p-4 border-b border-gray-200">
-                  <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
-                </div>
-                <div className="max-h-64 overflow-y-auto custom-scrollbar">
-                  {notifications.map((notification) => (
-                    <div key={notification.id} className="p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <div className="flex items-start space-x-3">
-                        <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
-                          notification.type === 'success' ? 'bg-green-500' :
-                          notification.type === 'warning' ? 'bg-yellow-500' :
-                          'bg-blue-500'
-                        }`}></div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-900">{notification.message}</p>
-                          <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="p-3 border-t border-gray-200">
-                  <button className="text-sm text-primary-600 hover:text-primary-700 font-medium w-full text-center">
-                    View all notifications
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
 
           {/* Profile */}
           <div className="relative">
@@ -189,14 +128,8 @@ const TopBar = ({ onMenuClick, isMenuOpen }) => {
                   </span>
                 </div>
                 <div className="py-2">
-                  <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                  <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors" onClick={() => window.location.assign('/profile')}>
                     Profile Settings
-                  </button>
-                  <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                    Account Settings
-                  </button>
-                  <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                    Help & Support
                   </button>
                 </div>
                 <div className="border-t border-gray-200 py-2">
@@ -215,12 +148,11 @@ const TopBar = ({ onMenuClick, isMenuOpen }) => {
       </div>
 
       {/* Click outside to close dropdowns */}
-      {(showProfileMenu || showNotifications || showPujaSelector) && (
+      {(showProfileMenu || showPujaSelector) && (
         <div
           className="fixed inset-0 z-40"
           onClick={() => {
             setShowProfileMenu(false);
-            setShowNotifications(false);
             setShowPujaSelector(false);
           }}
         />

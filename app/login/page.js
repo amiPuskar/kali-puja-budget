@@ -3,16 +3,53 @@
 import { useState } from 'react';
 import { Eye, EyeOff, User, Lock, LogIn } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+// import { useAuth } from '@/contexts/AuthContext';
+import { db } from '@/lib/firebaseConfig';
+import { COLLECTIONS } from '@/lib/firebase';
+import { collection, getDocs, query, where, limit } from 'firebase/firestore';
+
+const MOCK_SUPER_ADMIN = {
+  email: 'admin@pujabudget.com',
+  password: 'admin123',
+  role: 'super_admin',
+  name: 'Super Admin'
+};
 
 export default function Login() {
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  // const { login } = useAuth();
+
+  const mapRoleToAccess = (role) => {
+    if (!role) return 'user';
+    const r = String(role).toLowerCase();
+    if (r === 'president' || r === 'vice president' || r === 'vp') return 'super_admin';
+    if (r === 'manager' || r === 'vm') return 'admin';
+    return 'user';
+  };
+
+  const findMemberByIdentifier = async (identifier) => {
+    const membersRef = collection(db, COLLECTIONS.MEMBERS);
+
+    // Try email match
+    const qEmail = query(membersRef, where('email', '==', identifier), limit(1));
+    const emailSnap = await getDocs(qEmail);
+    if (!emailSnap.empty) return { id: emailSnap.docs[0].id, ...emailSnap.docs[0].data() };
+
+    // Try contact/phone match
+    const qPhone = query(membersRef, where('contact', '==', identifier), limit(1));
+    const phoneSnap = await getDocs(qPhone);
+    if (!phoneSnap.empty) return { id: phoneSnap.docs[0].id, ...phoneSnap.docs[0].data() };
+
+    // No username lookup anymore
+    return null;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,36 +57,51 @@ export default function Login() {
     setError('');
 
     try {
-      // Simulate login API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock authentication - replace with real authentication
-      const mockUsers = [
-        { email: 'admin@pujabudget.com', password: 'admin123', role: 'super_admin', name: 'Super Admin' },
-        { email: 'president@pujabudget.com', password: 'president123', role: 'admin', name: 'President' },
-        { email: 'vp@pujabudget.com', password: 'vp123', role: 'admin', name: 'Vice President' },
-        { email: 'manager@pujabudget.com', password: 'manager123', role: 'admin', name: 'Manager' },
-        { email: 'vm@pujabudget.com', password: 'vm123', role: 'admin', name: 'VM' },
-        { email: 'member@pujabudget.com', password: 'member123', role: 'user', name: 'Member' }
-      ];
+      const identifier = formData.username.trim();
+      const password = formData.password;
 
-      const user = mockUsers.find(u => u.email === formData.email && u.password === formData.password);
-      
-      if (user) {
-        // Store user data in localStorage
-        localStorage.setItem('user', JSON.stringify({
-          id: Date.now(),
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          loginTime: new Date().toISOString()
-        }));
-        
-        // Redirect to dashboard
-        router.push('/');
-      } else {
-        setError('Invalid email or password');
+      let member = await findMemberByIdentifier(identifier);
+
+      // Mock super admin fallback
+      if (!member && identifier.toLowerCase() === MOCK_SUPER_ADMIN.email && password === MOCK_SUPER_ADMIN.password) {
+        member = {
+          id: 'mock-super-admin',
+          email: MOCK_SUPER_ADMIN.email,
+          name: MOCK_SUPER_ADMIN.name,
+          role: 'President',
+          contact: ''
+        };
       }
+
+      if (!member) {
+        setError('No account found for the provided mobile/email');
+        return;
+      }
+
+      if (!member.password && member.id !== 'mock-super-admin') {
+        setError('Password not set. Please contact admin.');
+        return;
+      }
+
+      if (member.id !== 'mock-super-admin' && member.password !== password) {
+        setError('Invalid mobile/email or password');
+        return;
+      }
+
+      const accessRole = member.id === 'mock-super-admin' ? 'super_admin' : mapRoleToAccess(member.role);
+
+      const userData = {
+        id: member.id,
+        email: member.email || '',
+        name: member.name || 'User',
+        role: accessRole,
+        originalRole: member.role || 'Member',
+        contact: member.contact || '',
+        loginTime: new Date().toISOString()
+      };
+
+      localStorage.setItem('user', JSON.stringify(userData));
+      router.replace('/');
     } catch (err) {
       setError('Login failed. Please try again.');
     } finally {
@@ -91,23 +143,23 @@ export default function Login() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
+            {/* Username/Mobile/Email Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
+                Mobile Number / Email ID
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <User className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  type="email"
-                  name="email"
+                  type="text"
+                  name="username"
                   required
-                  value={formData.email}
+                  value={formData.username}
                   onChange={handleInputChange}
                   className="input-field pl-10"
-                  placeholder="Enter your email"
+                  placeholder="Enter your mobile number or email"
                 />
               </div>
             </div>
@@ -161,17 +213,12 @@ export default function Login() {
             </button>
           </form>
 
-          {/* Demo Credentials */}
-          <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-900 mb-3">Demo Credentials:</h3>
-            <div className="space-y-2 text-xs text-gray-600">
-              <div><strong>Super Admin:</strong> admin@pujabudget.com / admin123</div>
-              <div><strong>Admin (President):</strong> president@pujabudget.com / president123</div>
-              <div><strong>Admin (VP):</strong> vp@pujabudget.com / vp123</div>
-              <div><strong>Admin (Manager):</strong> manager@pujabudget.com / manager123</div>
-              <div><strong>Admin (VM):</strong> vm@pujabudget.com / vm123</div>
-              <div><strong>User (Member):</strong> member@pujabudget.com / member123</div>
-            </div>
+          {/* Login Instructions */}
+          <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+            <h3 className="text-sm font-medium text-blue-900 mb-2">Login Instructions:</h3>
+            <p className="text-xs text-blue-700">
+              Use your username, mobile number, or email ID along with your password to sign in.
+            </p>
           </div>
         </div>
 
