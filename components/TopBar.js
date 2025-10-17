@@ -1,15 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import { User, Menu, X, ChevronDown, Calendar } from 'lucide-react';
+import { User, Menu, X, ChevronDown, Calendar, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePuja } from '@/contexts/PujaContext';
+import { useRouter } from 'next/navigation';
 
 const TopBar = ({ onMenuClick, isMenuOpen }) => {
   const [showPujaSelector, setShowPujaSelector] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { currentPuja, pujas, switchPuja } = usePuja();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    logout();
+    router.replace('/login');
+  };
 
 
   const notifications = [
@@ -97,25 +105,72 @@ const TopBar = ({ onMenuClick, isMenuOpen }) => {
         {/* Right side - Profile, Logout */}
         <div className="flex items-center space-x-1 sm:space-x-2">
 
-          {/* Profile - Simple Display */}
-          <div className="flex items-center space-x-2 p-2">
-            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
-              <User className="w-4 h-4" />
-            </div>
-            <div className="hidden sm:block text-left">
-              <p className="text-sm font-medium truncate">{user?.name || 'User'}</p>
-              <p className="text-xs text-gray-500 capitalize">{user?.originalRole}</p>
-            </div>
+          {/* Profile Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              className="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                <User className="w-4 h-4" />
+              </div>
+              <div className="hidden sm:block text-left">
+                <p className="text-sm font-medium truncate">{user?.name || 'User'}</p>
+                <p className="text-xs text-gray-500 capitalize">{user?.originalRole}</p>
+              </div>
+              <ChevronDown className="w-4 h-4 text-gray-500" />
+            </button>
+
+            {/* Profile Dropdown Menu */}
+            {showProfileMenu && (
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                <div className="py-2">
+                  {/* User Info */}
+                  <div className="px-4 py-2 border-b border-gray-200">
+                    <p className="text-sm font-medium text-gray-900">{user?.name || 'User'}</p>
+                    <p className="text-xs text-gray-500 capitalize">{user?.originalRole}</p>
+                  </div>
+                  
+                  {/* Horizontal Line */}
+                  <div className="border-t border-gray-200 my-1"></div>
+                  
+                  {/* Profile Settings */}
+                  <button
+                    onClick={() => {
+                      router.push('/profile');
+                      setShowProfileMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                  >
+                    <User className="w-4 h-4" />
+                    <span>Profile Settings</span>
+                  </button>
+                  
+                  {/* Horizontal Line */}
+                  <div className="border-t border-gray-200 my-1"></div>
+                  
+                  {/* Logout */}
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Click outside to close dropdowns */}
-      {showPujaSelector && (
+      {(showPujaSelector || showProfileMenu) && (
         <div
           className="fixed inset-0 z-40"
           onClick={() => {
             setShowPujaSelector(false);
+            setShowProfileMenu(false);
           }}
         />
       )}
