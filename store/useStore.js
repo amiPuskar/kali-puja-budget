@@ -3,6 +3,7 @@ import { create } from 'zustand';
 const useStore = create((set, get) => ({
   // State
   members: [], // Club members (not puja-specific)
+  pendingMembers: [], // Pending member registrations
   contributions: [], // Member contributions per puja
   expenses: [],
   volunteers: [],
@@ -19,6 +20,7 @@ const useStore = create((set, get) => ({
 
   // Actions
   setMembers: (members) => set({ members }),
+  setPendingMembers: (pendingMembers) => set({ pendingMembers }),
   setContributions: (contributions) => set({ contributions }),
   setExpenses: (expenses) => set({ expenses }),
   setVolunteers: (volunteers) => set({ volunteers }),
@@ -158,6 +160,7 @@ const useStore = create((set, get) => ({
   // Clear all data
   clearAll: () => set({
     members: [],
+    pendingMembers: [],
     contributions: [],
     expenses: [],
     volunteers: [],

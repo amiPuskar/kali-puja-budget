@@ -14,7 +14,8 @@ import {
   Target, 
   DollarSign,
   Calendar,
-  CalendarDays
+  CalendarDays,
+  Link as LinkIcon
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -26,6 +27,8 @@ const Sidebar = ({ isOpen, onClose }) => {
     { name: 'Puja Management', href: '/pujas', icon: CalendarDays, visible: isSuperAdmin() },
     { name: 'Contributions', href: '/contributions', icon: UserCheck, visible: true },
     { name: 'Members', href: '/members', icon: Users, visible: isSuperAdmin() },
+    { name: 'Pending Members', href: '/pending-members', icon: UserCheck, visible: isSuperAdmin() },
+    { name: 'Signup Link', href: '/signup-link', icon: LinkIcon, visible: isSuperAdmin() },
     { name: 'Budget Items', href: '/budget-items', icon: Target, visible: isAdmin() },
     // Make these visible to all roles (users will have view-only in-page)
     { name: 'Budget Allocations', href: '/budget', icon: DollarSign, visible: true },
@@ -61,14 +64,13 @@ const Sidebar = ({ isOpen, onClose }) => {
                 <span className="text-white font-bold text-sm">PB</span>
               </div>
               <div className="min-w-0">
-                <h1 className="text-lg font-bold text-gray-900">Puja Budget</h1>
-                <p className="text-xs text-gray-500">Management System</p>
+                <h1 className="text-lg font-bold text-gray-900">New Kalimata Boys Club</h1>
               </div>
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
+          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar">
             {navigation.map((item) => {
               const Icon = item.icon;
               return (

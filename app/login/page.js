@@ -74,7 +74,7 @@ export default function Login() {
       }
 
       if (!member) {
-        setError('No account found for the provided mobile/email');
+        setError('No account found for the provided mobile/email. Please check if your membership has been approved.');
         return;
       }
 
@@ -85,6 +85,12 @@ export default function Login() {
 
       if (member.id !== 'mock-super-admin' && member.password !== password) {
         setError('Invalid mobile/email or password');
+        return;
+      }
+
+      // Check if member is active (approved)
+      if (member.status && member.status !== 'active' && member.id !== 'mock-super-admin') {
+        setError('Your membership is not active. Please contact admin.');
         return;
       }
 
@@ -125,8 +131,7 @@ export default function Login() {
           <div className="w-16 h-16 bg-primary-600 rounded-xl flex items-center justify-center mx-auto mb-4">
             <span className="text-white font-bold text-2xl">PB</span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Puja Budget</h1>
-          <p className="text-gray-600">Club Management System</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">New Kalimata Boys Club</h1>
         </div>
 
         {/* Login Form */}
@@ -217,7 +222,20 @@ export default function Login() {
           <div className="mt-8 p-4 bg-blue-50 rounded-lg">
             <h3 className="text-sm font-medium text-blue-900 mb-2">Login Instructions:</h3>
             <p className="text-xs text-blue-700">
-              Use your username, mobile number, or email ID along with your password to sign in.
+              Use your mobile number or email ID along with your password to sign in.
+            </p>
+          </div>
+
+          {/* Signup Link */}
+          <div className="mt-4 text-center">
+            <p className="text-sm text-gray-600">
+              Not a member yet?{' '}
+              <button
+                onClick={() => router.push('/signup')}
+                className="text-primary-600 hover:text-primary-700 font-medium"
+              >
+                Request membership
+              </button>
             </p>
           </div>
         </div>
