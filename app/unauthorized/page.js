@@ -13,7 +13,7 @@ export default function Unauthorized() {
         
         <h1 className="text-3xl font-bold text-gray-900 mb-4">Access Denied</h1>
         <p className="text-gray-600 mb-8">
-          You don't have permission to access this page. Please contact your administrator if you believe this is an error.
+          You don&apos;t have permission to access this page. Please contact your administrator if you believe this is an error.
         </p>
         
         <div className="space-y-4">
