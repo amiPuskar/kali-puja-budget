@@ -39,7 +39,7 @@ const TopBar = ({ onMenuClick, isMenuOpen }) => {
     // Refresh user data after a short delay to ensure context is ready
     const timer = setTimeout(refreshUserData, 1000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [refreshUserFromDatabase]);
 
   const handleLogout = () => {
     logout();

@@ -244,7 +244,7 @@ export default function Budget() {
                 <span className="text-blue-600 text-xs font-bold">i</span>
               </div>
               <p className="text-sm text-blue-800">
-                Add amounts for each category below. Use "Quick Fix" for categories with expenses, then "Save Allocations".
+                Add amounts for each category below. Use &quot;Quick Fix&quot; for categories with expenses, then &quot;Save Allocations&quot;.
               </p>
             </div>
           </div>

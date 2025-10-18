@@ -239,7 +239,7 @@ export const MixedContentExample = () => (
   />
 );
 
-export default {
+const SummaryCardExamples = {
   BasicSummaryExample,
   DashboardStatsExample,
   SmallSizeExample,
@@ -251,3 +251,5 @@ export default {
   VerticalLayoutExample,
   MixedContentExample
 };
+
+export default SummaryCardExamples;
