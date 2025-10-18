@@ -6,7 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { PujaProvider } from '@/contexts/PujaContext';
 import LayoutWrapper from '@/components/LayoutWrapper';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { DollarSign, TrendingUp, TrendingDown, Users, CheckSquare, Package, Calendar, Gift, Trophy, UserCheck, Receipt, Target } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, Users, CheckSquare, Package, Calendar, Gift, Trophy, UserCheck, Receipt, Target, Coins } from 'lucide-react';
 import useStore from '@/store/useStore';
 import { subscribeToCollection } from '@/lib/firebase';
 import { COLLECTIONS } from '@/lib/firebase';
@@ -26,6 +26,7 @@ function DashboardContent() {
     participants, 
     prizes,
     budgetAllocations,
+    paraCollections,
     setMembers, 
     setContributions,
     setExpenses, 
@@ -36,13 +37,15 @@ function DashboardContent() {
     setParticipants, 
     setPrizes,
     setBudgetAllocations,
+    setParaCollections,
     getTotalCollected, 
     getTotalSpent, 
     getRemainingBalance, 
     getUpcomingTasks, 
     getPendingItems, 
     getTotalDonations,
-    getTotalAllocatedForPuja
+    getTotalAllocatedForPuja,
+    getTotalParaCollections
   } = useStore();
 
   const { currentPuja } = usePuja();
@@ -68,6 +71,7 @@ function DashboardContent() {
     const unsubscribeParticipants = subscribeToCollection(`${COLLECTIONS.PARTICIPANTS}_${currentPuja.id}`, setParticipants);
     const unsubscribePrizes = subscribeToCollection(`${COLLECTIONS.PRIZES}_${currentPuja.id}`, setPrizes);
     const unsubscribeBudgetAllocations = subscribeToCollection(`${COLLECTIONS.BUDGET_ALLOCATIONS}_${currentPuja.id}`, setBudgetAllocations);
+    const unsubscribeParaCollections = subscribeToCollection(`${COLLECTIONS.PARA_COLLECTIONS}_${currentPuja.id}`, setParaCollections);
 
     return () => {
       unsubscribeMembers();
@@ -80,8 +84,9 @@ function DashboardContent() {
       unsubscribeParticipants();
       unsubscribePrizes();
       unsubscribeBudgetAllocations();
+      unsubscribeParaCollections();
     };
-  }, [currentPuja, setMembers, setContributions, setExpenses, setTasks, setInventory, setSponsors, setEvents, setParticipants, setPrizes, setBudgetAllocations]);
+  }, [currentPuja, setMembers, setContributions, setExpenses, setTasks, setInventory, setSponsors, setEvents, setParticipants, setPrizes, setBudgetAllocations, setParaCollections]);
 
   const totalCollected = getTotalCollected();
   const totalSpent = getTotalSpent();
@@ -89,6 +94,8 @@ function DashboardContent() {
   const upcomingTasks = getUpcomingTasks();
   const pendingItems = getPendingItems();
   const totalDonations = getTotalDonations();
+  const totalParaCollected = getTotalParaCollections();
+  const totalParaCollections = paraCollections.length;
 
   const stats = [
     {
@@ -111,6 +118,13 @@ function DashboardContent() {
       icon: TrendingUp,
       color: remainingBalance >= 0 ? 'text-green-600' : 'text-red-600',
       bgColor: remainingBalance >= 0 ? 'bg-green-100' : 'bg-red-100',
+    },
+    {
+      name: 'Para Collections',
+      value: `₹${totalParaCollected.toLocaleString()}`,
+      icon: Coins,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-100',
     },
     {
       name: 'Total Members',
@@ -236,6 +250,10 @@ function DashboardContent() {
                 <Link href="/events" className="p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
                   <Calendar className="w-6 h-6 text-purple-600 mx-auto mb-2" />
                   <p className="text-sm font-medium text-purple-900 text-center">Add Event</p>
+                </Link>
+                <Link href="/para-collection" className="p-3 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
+                  <Coins className="w-6 h-6 text-orange-600 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-orange-900 text-center">Para Collection</p>
                 </Link>
               </>
             ) : (
@@ -366,6 +384,45 @@ function DashboardContent() {
                     'bg-green-100 text-green-600'
                   }`}>
                     {task.priority}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Recent Para Collections */}
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Recent Para Collections</h3>
+            {isAdmin() && (
+              <Link href="/para-collection" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                View all
+              </Link>
+            )}
+          </div>
+          {paraCollections.length === 0 ? (
+            <div className="text-center py-8">
+              <Coins className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+              <p className="text-gray-500 text-sm">No para collections yet</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {paraCollections.slice(0, 5).map((collection) => (
+                <div key={collection.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                      <Coins className="w-4 h-4 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{collection.collectedBy || 'Not specified'}</p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(collection.date).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-sm font-semibold text-orange-600">
+                    ₹{collection.amount?.toLocaleString() || 0}
                   </span>
                 </div>
               ))}
