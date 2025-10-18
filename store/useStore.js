@@ -40,7 +40,10 @@ const useStore = create((set, get) => ({
   // Computed values
   getTotalCollected: () => {
     const contributions = get().contributions;
-    return contributions.reduce((total, contribution) => total + (contribution.amount || 0), 0);
+    const paraCollections = get().paraCollections;
+    const contributionsTotal = contributions.reduce((total, contribution) => total + (contribution.amount || 0), 0);
+    const paraCollectionsTotal = paraCollections.reduce((total, collection) => total + (collection.amount || 0), 0);
+    return contributionsTotal + paraCollectionsTotal;
   },
 
   getTotalSpent: () => {
@@ -77,6 +80,11 @@ const useStore = create((set, get) => ({
   getTotalDonations: () => {
     const sponsors = get().sponsors;
     return sponsors.reduce((total, sponsor) => total + (sponsor.amount || 0), 0);
+  },
+
+  getTotalParaCollections: () => {
+    const paraCollections = get().paraCollections;
+    return paraCollections.reduce((total, collection) => total + (collection.amount || 0), 0);
   },
 
   getTotalBudget: () => {
