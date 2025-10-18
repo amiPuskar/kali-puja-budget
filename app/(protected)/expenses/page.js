@@ -76,6 +76,18 @@ export default function Expenses() {
       return;
     }
 
+    // Check if category has budget allocation
+    const selectedBudgetItem = budgetItems.find(item => item.name === formData.category);
+    if (selectedBudgetItem) {
+      const allocation = budgetAllocations.find(a => a.budgetItemId === selectedBudgetItem.id);
+      if (!allocation || allocation.allocatedAmount === 0) {
+        const confirmed = window.confirm(
+          `Warning: No budget allocated for "${formData.category}". This expense will show as over budget. Continue?`
+        );
+        if (!confirmed) return;
+      }
+    }
+
     try {
       const expenseData = {
         ...formData,
@@ -140,14 +152,8 @@ export default function Expenses() {
   const totalSpent = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
 
   // Only show categories for budget items that have allocations for the current puja
-  const allocatedItemIds = new Set(
-    (budgetAllocations || [])
-      .filter(a => a.pujaId === currentPuja?.id)
-      .map(a => a.budgetItemId)
-  );
-  const categories = (budgetItems || [])
-    .filter(item => allocatedItemIds.has(item.id))
-    .map(item => item.name);
+  // Use all budget items as categories (not just allocated ones)
+  const categories = (budgetItems || []).map(item => item.name);
 
   if (isLoading) {
     return <LoadingSpinner message="Loading expenses..." />;
