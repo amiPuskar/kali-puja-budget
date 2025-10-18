@@ -257,8 +257,23 @@ function DashboardContent() {
                 </Link>
               </>
             ) : (
-              <div className="col-span-2 text-center py-8">
-                <p className="text-gray-500">Welcome, {user?.name}! View your dashboard below.</p>
+              <div className="col-span-2 grid grid-cols-2 gap-3">
+                <Link href="/contributions" className="p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                  <UserCheck className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-blue-900 text-center">My Contributions</p>
+                </Link>
+                <Link href="/para-collection" className="p-3 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
+                  <Coins className="w-6 h-6 text-orange-600 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-orange-900 text-center">Para Collection</p>
+                </Link>
+                <Link href="/events" className="p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+                  <Calendar className="w-6 h-6 text-purple-600 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-purple-900 text-center">View Events</p>
+                </Link>
+                <Link href="/members" className="p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                  <Users className="w-6 h-6 text-green-600 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-green-900 text-center">Club Members</p>
+                </Link>
               </div>
             )}
           </div>
