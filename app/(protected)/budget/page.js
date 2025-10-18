@@ -343,86 +343,96 @@ export default function Budget() {
         return null;
       })()}
 
-      {/* Budget Items - Row Design */}
-      <div className="card">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Budget Categories</h3>
-        <div className="space-y-3">
-          {budgetItems.map((budgetItem) => {
-            const allocated = allocations[budgetItem.id] || 0;
-            const spent = getSpentAmount(budgetItem.name);
-            const remaining = allocated - spent;
-            const spentPercentage = allocated > 0 ? (spent / allocated) * 100 : 0;
-            const budgetStatus = getBudgetStatus(budgetItem);
-            const StatusIcon = budgetStatus.icon;
-            
-            return (
-              <div key={budgetItem.id} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4 flex-1">
-                    <div className="flex-shrink-0 p-2 bg-blue-100 rounded-lg">
-                      <Target className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <h4 className="text-sm font-medium text-gray-900 truncate">{budgetItem.name}</h4>
-                        <StatusIcon className={`w-4 h-4 ${
-                          budgetStatus.color === 'red' ? 'text-red-500' :
-                          budgetStatus.color === 'yellow' ? 'text-yellow-500' :
-                          budgetStatus.color === 'blue' ? 'text-blue-500' :
-                          'text-green-500'
-                        }`} />
-                      </div>
-                      <p className="text-xs text-gray-500 truncate">{budgetItem.description}</p>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mt-1">
-                        {budgetItem.category}
-                      </span>
-                    </div>
+      {/* Budget Categories - Full Width Cards */}
+      <div className="space-y-3">
+        {budgetItems.map((budgetItem) => {
+          const allocated = allocations[budgetItem.id] || 0;
+          const spent = getSpentAmount(budgetItem.name);
+          const remaining = allocated - spent;
+          const spentPercentage = allocated > 0 ? (spent / allocated) * 100 : 0;
+          const budgetStatus = getBudgetStatus(budgetItem);
+          const StatusIcon = budgetStatus.icon;
+          
+          return (
+            <div key={budgetItem.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
+                    <Target className="w-4 h-4 text-blue-600" />
                   </div>
-                  
-                  {/* Amount Input */}
-                  <div className="flex items-center space-x-3">
-                    <div className="text-right">
-                      <p className="text-xs text-gray-600 mb-1">Budget Amount</p>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-500">₹</span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={allocated}
-                          onChange={(e) => handleAmountChange(budgetItem.id, e.target.value)}
-                          disabled={!canManage}
-                          className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                          placeholder="0"
-                        />
-                      </div>
-                    </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-900">{budgetItem.name}</h3>
+                    <p className="text-xs text-gray-500">{budgetItem.description}</p>
                   </div>
                 </div>
                 
-                {/* Progress Bar and Stats - Only show if there's data */}
-                {(allocated > 0 || spent > 0) && (
-                  <div className="mt-3">
-                    <div className="flex justify-between text-xs text-gray-600 mb-1">
-                      <span>Spent: ₹{spent.toLocaleString()}</span>
-                      {allocated > 0 ? (
-                        <>
-                          <span>Remaining: ₹{remaining.toLocaleString()}</span>
-                          <span className={`font-medium ${
-                            spentPercentage > 100 ? 'text-red-600' :
-                            spentPercentage > 80 ? 'text-yellow-600' :
-                            'text-green-600'
-                          }`}>
-                            {spentPercentage.toFixed(1)}% used
-                          </span>
-                        </>
-                      ) : (
-                        <span className="font-medium text-red-600">
-                          No budget allocated
-                        </span>
-                      )}
+                <div className="flex items-center space-x-2">
+                  <StatusIcon className={`w-4 h-4 ${
+                    budgetStatus.color === 'red' ? 'text-red-500' :
+                    budgetStatus.color === 'yellow' ? 'text-yellow-500' :
+                    budgetStatus.color === 'blue' ? 'text-blue-500' :
+                    'text-green-500'
+                  }`} />
+                  <div className="px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-medium">
+                    {budgetItem.category}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Budget Amount Input */}
+              <div className="mb-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-gray-600">Budget Amount (₹)</label>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-500">₹</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={allocated}
+                      onChange={(e) => handleAmountChange(budgetItem.id, e.target.value)}
+                      disabled={!canManage}
+                      className="w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Progress and Stats - Only show if there's data */}
+              {(allocated > 0 || spent > 0) && (
+                <div className="space-y-2">
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="bg-gray-50 rounded p-2">
+                      <p className="text-xs text-gray-500 mb-1">Allocated</p>
+                      <p className="text-sm font-semibold text-gray-900">₹{allocated.toLocaleString()}</p>
                     </div>
-                    
+                    <div className="bg-gray-50 rounded p-2">
+                      <p className="text-xs text-gray-500 mb-1">Spent</p>
+                      <p className="text-sm font-semibold text-red-600">₹{spent.toLocaleString()}</p>
+                    </div>
+                    <div className="bg-gray-50 rounded p-2">
+                      <p className="text-xs text-gray-500 mb-1">Remaining</p>
+                      <p className={`text-sm font-semibold ${remaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        ₹{remaining.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Progress Bar */}
+                  <div>
+                    <div className="flex justify-between text-xs text-gray-600 mb-1">
+                      <span>Budget Usage</span>
+                      <span className={`font-medium ${
+                        spentPercentage > 100 ? 'text-red-600' :
+                        spentPercentage > 80 ? 'text-yellow-600' :
+                        'text-green-600'
+                      }`}>
+                        {allocated > 0 ? `${spentPercentage.toFixed(1)}%` : 'No budget'}
+                      </span>
+                    </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div 
                         className={`h-2 rounded-full transition-all duration-300 ${
@@ -434,35 +444,35 @@ export default function Budget() {
                         style={{ width: allocated > 0 ? `${Math.min(spentPercentage, 100)}%` : '100%' }}
                       ></div>
                     </div>
-                    
-                    {/* Alert Messages */}
-                    {allocated === 0 && spent > 0 && (
-                      <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
-                        <div className="flex items-center">
-                          <AlertTriangle className="w-3 h-3 text-red-600 mr-1" />
-                          <p className="text-xs text-red-700">
-                            No budget allocated but ₹{spent.toLocaleString()} spent!
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {allocated > 0 && spentPercentage > 100 && (
-                      <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
-                        <div className="flex items-center">
-                          <AlertTriangle className="w-3 h-3 text-red-600 mr-1" />
-                          <p className="text-xs text-red-700">
-                            Over budget by ₹{(spent - allocated).toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-                    )}
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                  
+                  {/* Alert Messages */}
+                  {allocated === 0 && spent > 0 && (
+                    <div className="bg-red-50 border border-red-200 rounded p-2">
+                      <div className="flex items-center">
+                        <AlertTriangle className="w-3 h-3 text-red-600 mr-1 flex-shrink-0" />
+                        <p className="text-xs text-red-700">
+                          No budget allocated but ₹{spent.toLocaleString()} spent!
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {allocated > 0 && spentPercentage > 100 && (
+                    <div className="bg-red-50 border border-red-200 rounded p-2">
+                      <div className="flex items-center">
+                        <AlertTriangle className="w-3 h-3 text-red-600 mr-1 flex-shrink-0" />
+                        <p className="text-xs text-red-700">
+                          Over budget by ₹{(spent - allocated).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {budgetItems.length === 0 && (
