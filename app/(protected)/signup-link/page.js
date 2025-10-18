@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Copy, Share2, Link, QrCode, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
+import Image from 'next/image';
 
 export default function SignupLink() {
   const { isSuperAdmin } = useAuth();
@@ -125,9 +126,11 @@ export default function SignupLink() {
 
         <div className="text-center">
           <div className="inline-block p-4 bg-white rounded-lg border-2 border-gray-200">
-            <img
+            <Image
               src={qrCodeUrl}
               alt="Signup QR Code"
+              width={192}
+              height={192}
               className="w-48 h-48"
             />
           </div>
