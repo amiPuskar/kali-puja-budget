@@ -11,6 +11,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import SummaryCard from '@/components/SummaryCard';
+import SearchField from '@/components/SearchField';
+import { filterBySearch } from '@/lib/search';
 
 export default function Pujas() {
   const { members, setMembers } = useStore();
@@ -18,6 +20,7 @@ export default function Pujas() {
   const { isSuperAdmin } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPuja, setEditingPuja] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     year: new Date().getFullYear(),
@@ -28,6 +31,7 @@ export default function Pujas() {
     status: 'pending'
   });
   const [isLoading, setIsLoading] = useState(true);
+  const filteredPujas = filterBySearch(pujas, searchTerm);
 
   useEffect(() => {
     const unsubscribe = subscribeToCollection(COLLECTIONS.MEMBERS, (data) => {
@@ -177,7 +181,12 @@ export default function Pujas() {
 
       {/* Pujas List */}
       <div className="space-y-4">
-        {pujas.map((puja) => {
+        <SearchField
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Search Pujas by name, year, status, or manager..."
+        />
+        {filteredPujas.map((puja) => {
           const manager = members.find(m => m.id === puja.managerId);
           return (
             <div key={puja.id} className="card">
@@ -247,6 +256,11 @@ export default function Pujas() {
           <Calendar className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No pujas created</h3>
           <p className="mt-1 text-sm text-gray-500">Get started by creating your first puja.</p>
+        </div>
+      )}
+      {pujas.length > 0 && filteredPujas.length === 0 && (
+        <div className="text-center py-8 text-sm text-gray-500">
+          No Pujas match &quot;{searchTerm}&quot;.
         </div>
       )}
 

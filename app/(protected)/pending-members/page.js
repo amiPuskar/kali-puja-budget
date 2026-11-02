@@ -10,6 +10,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { ROLE_OPTIONS } from '@/lib/roles';
+import SearchField from '@/components/SearchField';
+import { filterBySearch } from '@/lib/search';
 
 export default function PendingMembers() {
   const { pendingMembers, setPendingMembers } = useStore();
@@ -21,6 +23,7 @@ export default function PendingMembers() {
     notes: ''
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const unsubscribe = subscribeToCollection(COLLECTIONS.PENDING_MEMBERS, (data) => {
@@ -94,6 +97,7 @@ export default function PendingMembers() {
   };
 
   const pendingRequests = pendingMembers.filter(member => member.status === 'pending');
+  const filteredPendingRequests = filterBySearch(pendingRequests, searchTerm);
   const approvedRequests = pendingMembers.filter(member => member.status === 'approved');
   const rejectedRequests = pendingMembers.filter(member => member.status === 'rejected');
 
@@ -162,6 +166,11 @@ export default function PendingMembers() {
       {/* Pending Requests */}
       <div className="space-y-3 sm:space-y-4">
         <h3 className="text-base sm:text-lg font-medium text-gray-900">Pending Requests</h3>
+        <SearchField
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Search requests by name, contact, or email..."
+        />
         {pendingRequests.length === 0 ? (
           <div className="card">
             <p className="text-gray-500 text-sm">No pending membership requests</p>
@@ -192,7 +201,7 @@ export default function PendingMembers() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {pendingRequests.map((member) => (
+                    {filteredPendingRequests.map((member) => (
                       <tr key={member.id} className="hover:bg-gray-50">
                         <td className="px-4 py-4 whitespace-nowrap">
                           <div className="flex items-center">
@@ -242,7 +251,7 @@ export default function PendingMembers() {
             
             {/* Mobile List - Individual Cards */}
             <div className="sm:hidden space-y-3">
-              {pendingRequests.map((member) => (
+              {filteredPendingRequests.map((member) => (
                 <div key={member.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
                   {/* Header */}
                   <div className="flex items-center justify-between mb-3">
@@ -288,6 +297,11 @@ export default function PendingMembers() {
               ))}
             </div>
           </>
+        )}
+        {pendingRequests.length > 0 && filteredPendingRequests.length === 0 && (
+          <div className="card text-center text-sm text-gray-500">
+            No pending requests match &quot;{searchTerm}&quot;.
+          </div>
         )}
       </div>
 

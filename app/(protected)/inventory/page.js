@@ -8,6 +8,8 @@ import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import PageHeader from '@/components/PageHeader';
 import { useAuth } from '@/contexts/AuthContext';
+import SearchField from '@/components/SearchField';
+import { filterBySearch } from '@/lib/search';
 
 export default function Inventory() {
   const { inventory, setInventory } = useStore();
@@ -15,6 +17,7 @@ export default function Inventory() {
   const canManage = isAdmin();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -103,6 +106,8 @@ export default function Inventory() {
 
   const receivedItems = inventory.filter(item => item.received);
   const pendingItems = inventory.filter(item => !item.received);
+  const filteredReceivedItems = filterBySearch(receivedItems, searchTerm);
+  const filteredPendingItems = filterBySearch(pendingItems, searchTerm);
   const totalEstimatedCost = inventory.reduce((sum, item) => sum + (item.estimatedCost || 0), 0);
 
   const categories = [
@@ -180,13 +185,18 @@ export default function Inventory() {
       </div>
 
       {/* Pending Items */}
+      <SearchField
+        value={searchTerm}
+        onChange={setSearchTerm}
+        placeholder="Search inventory by name, category, quantity, or notes..."
+      />
       <div className="space-y-4">
         {pendingItems.length === 0 ? (
           <div className="card">
             <p className="text-gray-500 text-sm">All items have been received</p>
           </div>
         ) : (
-          pendingItems.map((item) => (
+          filteredPendingItems.map((item) => (
             <div key={item.id} className="card bg-orange-50 border-orange-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
@@ -235,13 +245,18 @@ export default function Inventory() {
             </div>
           ))
         )}
+        {pendingItems.length > 0 && filteredPendingItems.length === 0 && searchTerm && (
+          <div className="card text-center text-sm text-gray-500">
+            No pending items match &quot;{searchTerm}&quot;.
+          </div>
+        )}
       </div>
 
       {/* Received Items */}
       {receivedItems.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-900">Received Items</h3>
-          {receivedItems.map((item) => (
+          {filteredReceivedItems.map((item) => (
             <div key={item.id} className="card bg-green-50 border-green-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
@@ -288,6 +303,11 @@ export default function Inventory() {
               </div>
             </div>
           ))}
+          {filteredReceivedItems.length === 0 && searchTerm && (
+            <div className="card text-center text-sm text-gray-500">
+              No received items match &quot;{searchTerm}&quot;.
+            </div>
+          )}
         </div>
       )}
 

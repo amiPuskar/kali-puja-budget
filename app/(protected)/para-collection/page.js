@@ -10,6 +10,8 @@ import { usePuja } from '@/contexts/PujaContext';
 import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import SearchField from '@/components/SearchField';
+import { filterBySearch } from '@/lib/search';
 
 export default function ParaCollection() {
   const { paraCollections, setParaCollections, members } = useStore();
@@ -18,6 +20,7 @@ export default function ParaCollection() {
   const canManage = isAdmin ? isAdmin() : false;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCollection, setEditingCollection] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     amount: '',
     date: new Date().toISOString().split('T')[0],
@@ -121,6 +124,7 @@ export default function ParaCollection() {
   };
 
   const totalCollected = paraCollections.reduce((sum, collection) => sum + (collection.amount || 0), 0);
+  const filteredCollections = filterBySearch(paraCollections, searchTerm);
 
   if (isLoading) {
     return <LoadingSpinner message="Loading para collections..." />;
@@ -181,6 +185,11 @@ export default function ParaCollection() {
       </div>
 
       {/* Desktop Table */}
+      <SearchField
+        value={searchTerm}
+        onChange={setSearchTerm}
+        placeholder="Search collections by date, collector, amount, or notes..."
+      />
       <div className="hidden sm:block card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -206,7 +215,7 @@ export default function ParaCollection() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {paraCollections.map((collection) => (
+              {filteredCollections.map((collection) => (
                 <tr key={collection.id} className="hover:bg-gray-50">
                   <td className="px-4 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
@@ -255,7 +264,7 @@ export default function ParaCollection() {
 
       {/* Mobile List - Individual Cards */}
       <div className="sm:hidden space-y-3">
-        {paraCollections.map((collection) => (
+        {filteredCollections.map((collection) => (
           <div key={collection.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
@@ -311,6 +320,11 @@ export default function ParaCollection() {
           <DollarSign className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No para collections</h3>
           <p className="mt-1 text-sm text-gray-500">Get started by adding your first para collection.</p>
+        </div>
+      )}
+      {paraCollections.length > 0 && filteredCollections.length === 0 && (
+        <div className="text-center py-8 text-sm text-gray-500">
+          No collections match &quot;{searchTerm}&quot;.
         </div>
       )}
 

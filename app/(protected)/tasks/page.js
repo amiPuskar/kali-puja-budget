@@ -8,6 +8,8 @@ import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import PageHeader from '@/components/PageHeader';
 import { useAuth } from '@/contexts/AuthContext';
+import SearchField from '@/components/SearchField';
+import { filterBySearch } from '@/lib/search';
 
 export default function Tasks() {
   const { tasks, volunteers, setTasks, setVolunteers } = useStore();
@@ -15,6 +17,7 @@ export default function Tasks() {
   const canManage = isAdmin();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -104,6 +107,8 @@ export default function Tasks() {
 
   const pendingTasks = tasks.filter(task => !task.completed);
   const completedTasks = tasks.filter(task => task.completed);
+  const filteredPendingTasks = filterBySearch(pendingTasks, searchTerm);
+  const filteredCompletedTasks = filterBySearch(completedTasks, searchTerm);
 
   const getPriorityColor = (priority) => {
     switch (priority) {
@@ -165,13 +170,18 @@ export default function Tasks() {
       </div>
 
       {/* Pending Tasks */}
+      <SearchField
+        value={searchTerm}
+        onChange={setSearchTerm}
+        placeholder="Search tasks by title, description, assignee, or priority..."
+      />
       <div className="space-y-4">
         {pendingTasks.length === 0 ? (
           <div className="card">
             <p className="text-gray-500 text-sm">No pending tasks</p>
           </div>
         ) : (
-          pendingTasks.map((task) => (
+          filteredPendingTasks.map((task) => (
             <div key={task.id} className="card">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
@@ -217,13 +227,18 @@ export default function Tasks() {
             </div>
           ))
         )}
+        {pendingTasks.length > 0 && filteredPendingTasks.length === 0 && searchTerm && (
+          <div className="card text-center text-sm text-gray-500">
+            No pending tasks match &quot;{searchTerm}&quot;.
+          </div>
+        )}
       </div>
 
       {/* Completed Tasks */}
       {completedTasks.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-900">Completed Tasks</h3>
-          {completedTasks.map((task) => (
+          {filteredCompletedTasks.map((task) => (
             <div key={task.id} className="card bg-green-50 border-green-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
@@ -259,6 +274,11 @@ export default function Tasks() {
               </div>
             </div>
           ))}
+          {filteredCompletedTasks.length === 0 && searchTerm && (
+            <div className="card text-center text-sm text-gray-500">
+              No completed tasks match &quot;{searchTerm}&quot;.
+            </div>
+          )}
         </div>
       )}
 

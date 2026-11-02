@@ -8,6 +8,8 @@ import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import PageHeader from '@/components/PageHeader';
 import { useAuth } from '@/contexts/AuthContext';
+import SearchField from '@/components/SearchField';
+import { filterBySearch } from '@/lib/search';
 
 export default function Sponsors() {
   const { sponsors, setSponsors } = useStore();
@@ -15,6 +17,7 @@ export default function Sponsors() {
   const canManage = isAdmin();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSponsor, setEditingSponsor] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     type: 'individual',
@@ -144,6 +147,8 @@ export default function Sponsors() {
 
   const receivedSponsors = sponsors.filter(sponsor => sponsor.received);
   const pendingSponsors = sponsors.filter(sponsor => !sponsor.received);
+  const filteredReceivedSponsors = filterBySearch(receivedSponsors, searchTerm);
+  const filteredPendingSponsors = filterBySearch(pendingSponsors, searchTerm);
   const totalDonations = sponsors.reduce((sum, sponsor) => sum + (sponsor.amount || 0), 0);
   const receivedAmount = receivedSponsors.reduce((sum, sponsor) => sum + (sponsor.amount || 0), 0);
   const pendingAmount = pendingSponsors.reduce((sum, sponsor) => sum + (sponsor.amount || 0), 0);
@@ -211,13 +216,18 @@ export default function Sponsors() {
       </div>
 
       {/* Pending Sponsors */}
+      <SearchField
+        value={searchTerm}
+        onChange={setSearchTerm}
+        placeholder="Search sponsors by name, type, contact, or amount..."
+      />
       <div className="space-y-4">
         {pendingSponsors.length === 0 ? (
           <div className="card">
             <p className="text-gray-500 text-sm">No pending donations</p>
           </div>
         ) : (
-          pendingSponsors.map((sponsor) => (
+          filteredPendingSponsors.map((sponsor) => (
             <div key={sponsor.id} className="card bg-orange-50 border-orange-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
@@ -266,13 +276,18 @@ export default function Sponsors() {
             </div>
           ))
         )}
+        {pendingSponsors.length > 0 && filteredPendingSponsors.length === 0 && searchTerm && (
+          <div className="card text-center text-sm text-gray-500">
+            No pending sponsors match &quot;{searchTerm}&quot;.
+          </div>
+        )}
       </div>
 
       {/* Received Sponsors */}
       {receivedSponsors.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-900">Received Donations</h3>
-          {receivedSponsors.map((sponsor) => (
+          {filteredReceivedSponsors.map((sponsor) => (
             <div key={sponsor.id} className="card bg-green-50 border-green-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
@@ -319,6 +334,11 @@ export default function Sponsors() {
               </div>
             </div>
           ))}
+          {filteredReceivedSponsors.length === 0 && searchTerm && (
+            <div className="card text-center text-sm text-gray-500">
+              No received sponsors match &quot;{searchTerm}&quot;.
+            </div>
+          )}
         </div>
       )}
 

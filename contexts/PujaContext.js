@@ -19,85 +19,78 @@ export const PujaProvider = ({ children }) => {
   const [pujas, setPujas] = useState([]);
   const [currentPuja, setCurrentPuja] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
+    let isActive = true;
     let unsubscribe;
-    
-    const initializePujas = async () => {
+
+    setLoading(true);
+    setLoadError(null);
+
+    const handleSnapshot = (data) => {
+      if (!isActive) return;
+
       try {
-        // First, try to migrate any existing localStorage data
-        await migratePujasToFirebase();
-        
-        // Then subscribe to Firebase data
-        unsubscribe = subscribeToCollection(COLLECTIONS.PUJAS, async (data) => {
-          console.log('🔄 Pujas loaded from Firebase:', data);
-          console.log('📊 Data sync check - All users should see this same data');
-          
-          // If no pujas exist, just set empty array
-          if (!data || data.length === 0) {
-            console.log('No pujas found in Firebase.');
-            setPujas([]);
-            setCurrentPuja(null);
-            setLoading(false);
-            return;
-          }
-          
-          setPujas(data);
-          
-          // Set current puja logic
-          if (data.length > 0) {
-            const savedCurrentPuja = localStorage.getItem('currentPuja');
-            
-            if (savedCurrentPuja) {
-              try {
-                const parsedCurrentPuja = JSON.parse(savedCurrentPuja);
-                // Verify the saved puja still exists in Firebase data
-                const pujaExists = data.find(p => p.id === parsedCurrentPuja.id);
-                if (pujaExists) {
-                  setCurrentPuja(pujaExists);
-                  console.log('Restored saved current puja:', pujaExists.name);
-                } else {
-                  // Saved puja no longer exists, select the most recent puja
-                  const mostRecentPuja = data.sort((a, b) => new Date(b.createdAt || b.id) - new Date(a.createdAt || a.id))[0];
-                  setCurrentPuja(mostRecentPuja);
-                  localStorage.setItem('currentPuja', JSON.stringify(mostRecentPuja));
-                  console.log('Saved puja no longer exists, selected most recent puja:', mostRecentPuja.name);
-                }
-              } catch (error) {
-                console.error('Error parsing saved current puja:', error);
-                // Select the most recent puja as fallback
-                const mostRecentPuja = data.sort((a, b) => new Date(b.createdAt || b.id) - new Date(a.createdAt || a.id))[0];
-                setCurrentPuja(mostRecentPuja);
-                localStorage.setItem('currentPuja', JSON.stringify(mostRecentPuja));
-                console.log('Error parsing saved puja, selected most recent puja:', mostRecentPuja.name);
-              }
-            } else {
-              // No saved puja preference, select the most recent puja
-              const mostRecentPuja = data.sort((a, b) => new Date(b.createdAt || b.id) - new Date(a.createdAt || a.id))[0];
-              setCurrentPuja(mostRecentPuja);
-              localStorage.setItem('currentPuja', JSON.stringify(mostRecentPuja));
-              console.log('No saved puja preference, auto-selected most recent puja:', mostRecentPuja.name);
-            }
-          } else {
-            setCurrentPuja(null);
-          }
-          
+        console.log('Pujas loaded from Firebase:', data);
+
+        if (!data || data.length === 0) {
+          setPujas([]);
+          setCurrentPuja(null);
           setLoading(false);
-        });
+          return;
+        }
+
+        setPujas(data);
+
+        const savedCurrentPuja = localStorage.getItem('currentPuja');
+        let selectedPuja;
+
+        try {
+          const parsedCurrentPuja = savedCurrentPuja ? JSON.parse(savedCurrentPuja) : null;
+          selectedPuja = data.find((puja) => puja.id === parsedCurrentPuja?.id);
+        } catch (error) {
+          console.error('Error parsing saved current puja:', error);
+        }
+
+        if (!selectedPuja) {
+          selectedPuja = [...data].sort(
+            (a, b) => new Date(b.createdAt || b.id) - new Date(a.createdAt || a.id)
+          )[0];
+        }
+
+        setCurrentPuja(selectedPuja);
+        localStorage.setItem('currentPuja', JSON.stringify(selectedPuja));
+        setLoading(false);
       } catch (error) {
-        console.error('Error initializing pujas:', error);
+        console.error('Error processing Puja data:', error);
+        setLoadError(error.message || 'Unable to load Puja data.');
         setLoading(false);
       }
     };
-    
-    initializePujas();
+
+    const handleError = (error) => {
+      if (!isActive) return;
+      console.error('Error loading Pujas from Firebase:', error);
+      setLoadError(error.message || 'Unable to load Puja data from Firebase.');
+      setLoading(false);
+    };
+
+    unsubscribe = subscribeToCollection(COLLECTIONS.PUJAS, handleSnapshot, handleError);
+    migratePujasToFirebase().catch((error) => {
+      console.error('Error migrating saved Pujas:', error);
+    });
 
     return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
+      isActive = false;
+      unsubscribe?.();
     };
-  }, []);
+  }, [reloadKey]);
+
+  const retryLoading = () => {
+    setReloadKey((key) => key + 1);
+  };
 
   const createPuja = async (pujaData) => {
     try {
@@ -195,6 +188,8 @@ export const PujaProvider = ({ children }) => {
     pujas,
     currentPuja,
     loading,
+    loadError,
+    retryLoading,
     createPuja,
     updatePuja,
     deletePuja,
@@ -210,4 +205,3 @@ export const PujaProvider = ({ children }) => {
     </PujaContext.Provider>
   );
 };
-

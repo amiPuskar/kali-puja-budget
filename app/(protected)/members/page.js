@@ -12,6 +12,8 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import SummaryCard from '@/components/SummaryCard';
 import { getAccessLevel, ROLE_OPTIONS } from '@/lib/roles';
 import { debugRoleMapping, validateUserRole } from '@/lib/roleDebug';
+import SearchField from '@/components/SearchField';
+import { filterBySearch } from '@/lib/search';
 
 export default function Members() {
   const { members, setMembers } = useStore();
@@ -19,6 +21,7 @@ export default function Members() {
   const canManage = isSuperAdmin ? isSuperAdmin() : false;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     role: '',
@@ -28,6 +31,7 @@ export default function Members() {
   });
   const [fieldErrors, setFieldErrors] = useState({});
   const [isLoading, setIsLoading] = useState(true);
+  const filteredMembers = filterBySearch(members, searchTerm);
 
   // Validation functions
   const validateField = (field, value) => {
@@ -251,6 +255,11 @@ export default function Members() {
       />
 
       {/* Desktop Table */}
+      <SearchField
+        value={searchTerm}
+        onChange={setSearchTerm}
+        placeholder="Search members by name, role, contact, or email..."
+      />
       <div className="hidden sm:block card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -276,7 +285,7 @@ export default function Members() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {members.map((member) => (
+              {filteredMembers.map((member) => (
                 <tr key={member.id} className="hover:bg-gray-50">
                   <td className="px-4 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -328,7 +337,7 @@ export default function Members() {
       
       {/* Mobile List - Individual Cards */}
       <div className="sm:hidden space-y-3">
-        {members.map((member) => (
+        {filteredMembers.map((member) => (
           <div key={member.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
@@ -378,6 +387,11 @@ export default function Members() {
           <User className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No members</h3>
           <p className="mt-1 text-sm text-gray-500">Get started by adding a new member.</p>
+        </div>
+      )}
+      {members.length > 0 && filteredMembers.length === 0 && (
+        <div className="text-center py-8 text-sm text-gray-500">
+          No members match &quot;{searchTerm}&quot;.
         </div>
       )}
 

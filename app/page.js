@@ -2,8 +2,6 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { PujaProvider } from '@/contexts/PujaContext';
 import LayoutWrapper from '@/components/LayoutWrapper';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { DollarSign, TrendingUp, TrendingDown, Users, CheckSquare, Package, Calendar, Gift, Trophy, UserCheck, Receipt, Target, Coins } from 'lucide-react';
@@ -451,14 +449,10 @@ function DashboardContent() {
 
 export default function HomePage() {
   return (
-    <AuthProvider>
-      <PujaProvider>
-        <LayoutWrapper>
-          <ProtectedRoute>
-            <DashboardContent />
-          </ProtectedRoute>
-        </LayoutWrapper>
-      </PujaProvider>
-    </AuthProvider>
+    <LayoutWrapper>
+      <ProtectedRoute>
+        <DashboardContent />
+      </ProtectedRoute>
+    </LayoutWrapper>
   );
 }

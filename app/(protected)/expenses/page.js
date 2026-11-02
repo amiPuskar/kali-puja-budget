@@ -11,6 +11,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import SummaryCard from '@/components/SummaryCard';
+import SearchField from '@/components/SearchField';
+import { filterBySearch } from '@/lib/search';
 
 export default function Expenses() {
   const { expenses, setExpenses, budgetItems, setBudgetItems, budgetAllocations, setBudgetAllocations } = useStore();
@@ -27,6 +29,7 @@ export default function Expenses() {
     notes: ''
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     let loadedCount = 0;
@@ -150,6 +153,7 @@ export default function Expenses() {
   };
 
   const totalSpent = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
+  const filteredExpenses = filterBySearch(expenses, searchTerm);
 
   // Only show categories for budget items that have allocations for the current puja
   // Use all budget items as categories (not just allocated ones)
@@ -208,7 +212,12 @@ export default function Expenses() {
 
       {/* Expenses List */}
       <div className="space-y-4">
-        {expenses.map((expense) => (
+        <SearchField
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Search expenses by description, category, amount, or notes..."
+        />
+        {filteredExpenses.map((expense) => (
           <div key={expense.id} className="card">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-start space-x-3 min-w-0 flex-1">
@@ -267,6 +276,11 @@ export default function Expenses() {
           <Receipt className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No expenses</h3>
           <p className="mt-1 text-sm text-gray-500">Get started by adding your first expense.</p>
+        </div>
+      )}
+      {expenses.length > 0 && filteredExpenses.length === 0 && (
+        <div className="text-center py-8 text-sm text-gray-500">
+          No expenses match &quot;{searchTerm}&quot;.
         </div>
       )}
 

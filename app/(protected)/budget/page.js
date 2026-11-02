@@ -10,6 +10,8 @@ import { usePuja } from '@/contexts/PujaContext';
 import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import SearchField from '@/components/SearchField';
+import { filterBySearch } from '@/lib/search';
 
 export default function Budget() {
   const { 
@@ -25,6 +27,7 @@ export default function Budget() {
   const canManage = isAdmin();
   const [isLoading, setIsLoading] = useState(true);
   const [allocations, setAllocations] = useState({}); // { budgetItemId: amount }
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     let loadedCount = 0;
@@ -148,6 +151,7 @@ export default function Budget() {
   const totalAllocated = Object.values(allocations).reduce((sum, amount) => sum + (amount || 0), 0);
   const totalSpent = expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
   const remainingBudget = totalAvailable - totalAllocated;
+  const filteredBudgetItems = filterBySearch(budgetItems, searchTerm);
 
   // Get spent amount for each budget item
   const getSpentAmount = (budgetItemName) => {
@@ -345,7 +349,12 @@ export default function Budget() {
 
       {/* Budget Categories - Full Width Cards */}
       <div className="space-y-3">
-        {budgetItems.map((budgetItem) => {
+        <SearchField
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Search budget categories..."
+        />
+        {filteredBudgetItems.map((budgetItem) => {
           const allocated = allocations[budgetItem.id] || 0;
           const spent = getSpentAmount(budgetItem.name);
           const remaining = allocated - spent;
@@ -480,6 +489,11 @@ export default function Budget() {
           <Target className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No budget items</h3>
           <p className="mt-1 text-sm text-gray-500">Please add budget items first before allocating amounts.</p>
+        </div>
+      )}
+      {budgetItems.length > 0 && filteredBudgetItems.length === 0 && (
+        <div className="text-center py-8 text-sm text-gray-500">
+          No budget categories match &quot;{searchTerm}&quot;.
         </div>
       )}
     </div>

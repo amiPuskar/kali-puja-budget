@@ -9,6 +9,8 @@ import { COLLECTIONS } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
 import { hasPermission } from '@/lib/roles';
+import SearchField from '@/components/SearchField';
+import { filterBySearch } from '@/lib/search';
 
 export default function BudgetItems() {
   const { budgetItems, setBudgetItems } = useStore();
@@ -16,6 +18,7 @@ export default function BudgetItems() {
   const canManage = hasPermission(user?.role, 'canManageBudgetItems');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -93,6 +96,7 @@ export default function BudgetItems() {
     'Entertainment',
     'Miscellaneous'
   ];
+  const filteredBudgetItems = filterBySearch(budgetItems, searchTerm);
 
   // Members can view read-only; admins can manage
 
@@ -154,7 +158,12 @@ export default function BudgetItems() {
 
       {/* Budget Items List */}
       <div className="space-y-4">
-        {budgetItems.map((item) => (
+        <SearchField
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Search budget items by name, category, or description..."
+        />
+        {filteredBudgetItems.map((item) => (
           <div key={item.id} className="card">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
@@ -200,6 +209,11 @@ export default function BudgetItems() {
           <Target className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No budget items</h3>
           <p className="mt-1 text-sm text-gray-500">Get started by adding your first budget item.</p>
+        </div>
+      )}
+      {budgetItems.length > 0 && filteredBudgetItems.length === 0 && (
+        <div className="text-center py-8 text-sm text-gray-500">
+          No budget items match &quot;{searchTerm}&quot;.
         </div>
       )}
 

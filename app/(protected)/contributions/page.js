@@ -9,6 +9,8 @@ import { COLLECTIONS } from '@/lib/firebase';
 import { usePuja } from '@/contexts/PujaContext';
 import { useAuth } from '@/contexts/AuthContext';
 import PageHeader from '@/components/PageHeader';
+import SearchField from '@/components/SearchField';
+import { filterBySearch } from '@/lib/search';
 
 export default function Contributions() {
   const { members, contributions, setMembers, setContributions } = useStore();
@@ -17,6 +19,7 @@ export default function Contributions() {
   const canManage = isAdmin ? isAdmin() : false;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingContribution, setEditingContribution] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     memberId: '',
     amount: '',
@@ -120,6 +123,7 @@ export default function Contributions() {
     contribution: memberContributions[member.id] || null,
     hasContributed: !!memberContributions[member.id]
   }));
+  const filteredMembersWithContributions = filterBySearch(membersWithContributions, searchTerm);
 
   // Members can view read-only; admins can manage
 
@@ -187,10 +191,17 @@ export default function Contributions() {
 
       {/* All Members with Contribution Status */}
       <div className="space-y-4">
-        <div className="flex items-center flex-wrap sm:flex-nowrap justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-lg font-semibold text-gray-900">All Members - Contribution Status</h3>
-          <div className="text-sm text-gray-500">
-            {membersWithContributions.filter(m => m.hasContributed).length} of {members.length} contributed
+          <div className="flex flex-col gap-2 sm:items-end">
+            <div className="text-sm text-gray-500">
+              {membersWithContributions.filter(m => m.hasContributed).length} of {members.length} contributed
+            </div>
+            <SearchField
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Search members by name, contact, or contribution..."
+            />
           </div>
         </div>
         
@@ -220,7 +231,7 @@ export default function Contributions() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {membersWithContributions.map((member) => (
+                {filteredMembersWithContributions.map((member) => (
                   <tr key={member.id} className="hover:bg-gray-50">
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -305,7 +316,7 @@ export default function Contributions() {
         
         {/* Mobile List - Individual Cards */}
         <div className="sm:hidden space-y-3">
-          {membersWithContributions.map((member) => (
+          {filteredMembersWithContributions.map((member) => (
             <div key={member.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
               {/* Header */}
               <div className="flex items-center justify-between mb-3">
@@ -375,6 +386,11 @@ export default function Contributions() {
             </div>
           ))}
         </div>
+        {membersWithContributions.length > 0 && filteredMembersWithContributions.length === 0 && (
+          <div className="card text-center text-sm text-gray-500">
+            No members match &quot;{searchTerm}&quot;.
+          </div>
+        )}
       </div>
 
       {members.length === 0 && (

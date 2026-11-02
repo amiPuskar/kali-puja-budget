@@ -8,6 +8,8 @@ import { toast } from '@/lib/toast';
 import { COLLECTIONS } from '@/lib/firebase';
 import PageHeader from '@/components/PageHeader';
 import { useAuth } from '@/contexts/AuthContext';
+import SearchField from '@/components/SearchField';
+import { filterBySearch } from '@/lib/search';
 
 export default function Events() {
   const { 
@@ -25,6 +27,7 @@ export default function Events() {
   const canManage = isAdmin();
   
   const [activeTab, setActiveTab] = useState('events');
+  const [searchTerm, setSearchTerm] = useState('');
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [isParticipantModalOpen, setIsParticipantModalOpen] = useState(false);
   const [isPrizeModalOpen, setIsPrizeModalOpen] = useState(false);
@@ -252,6 +255,23 @@ export default function Events() {
   };
 
   const eventsWithDetails = getEventsWithDetails();
+  const filteredEvents = filterBySearch(eventsWithDetails, searchTerm);
+  const filteredParticipants = filterBySearch(
+    participants.map((participant) => ({
+      ...participant,
+      eventName: events.find((event) => event.id === participant.eventId)?.name
+    })),
+    searchTerm
+  );
+  const filteredPrizes = filterBySearch(
+    prizes.map((prize) => ({
+      ...prize,
+      eventName: events.find((event) => event.id === prize.eventId)?.name,
+      winnerName: participants.find((participant) => participant.id === prize.winnerId)?.name,
+      sponsorName: members.find((member) => member.id === prize.sponsorId)?.name
+    })),
+    searchTerm
+  );
   const totalEvents = events.length;
   const totalParticipants = participants.length;
   const totalPrizes = prizes.length;
@@ -364,8 +384,13 @@ export default function Events() {
             )}
           </div>
 
+          <SearchField
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Search events by name, category, location, or description..."
+          />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {eventsWithDetails.map((event) => (
+            {filteredEvents.map((event) => (
               <div key={event.id} className="card">
                 <div className="flex items-start justify-between mb-4">
                   <div className="min-w-0 flex-1">
@@ -432,6 +457,11 @@ export default function Events() {
               <p className="mt-1 text-sm text-gray-500">Get started by creating your first event.</p>
             </div>
           )}
+          {events.length > 0 && filteredEvents.length === 0 && (
+            <div className="text-center py-8 text-sm text-gray-500">
+              No events match &quot;{searchTerm}&quot;.
+            </div>
+          )}
         </div>
       )}
 
@@ -451,8 +481,13 @@ export default function Events() {
             )}
           </div>
 
+          <SearchField
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Search participants by name, event, role, or contact..."
+          />
           <div className="space-y-4">
-            {participants.map((participant) => {
+            {filteredParticipants.map((participant) => {
               const event = events.find(e => e.id === participant.eventId);
               return (
                 <div key={participant.id} className="card">
@@ -503,6 +538,11 @@ export default function Events() {
               <p className="mt-1 text-sm text-gray-500">Get started by adding your first participant.</p>
             </div>
           )}
+          {participants.length > 0 && filteredParticipants.length === 0 && (
+            <div className="text-center py-8 text-sm text-gray-500">
+              No participants match &quot;{searchTerm}&quot;.
+            </div>
+          )}
         </div>
       )}
 
@@ -522,8 +562,13 @@ export default function Events() {
             )}
           </div>
 
+          <SearchField
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Search prizes by position, event, winner, sponsor, or type..."
+          />
           <div className="space-y-4">
-            {prizes.map((prize) => {
+            {filteredPrizes.map((prize) => {
               const event = events.find(e => e.id === prize.eventId);
               const winner = participants.find(p => p.id === prize.winnerId);
               const sponsor = members.find(m => m.id === prize.sponsorId);
@@ -581,6 +626,11 @@ export default function Events() {
               <Trophy className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">No prizes</h3>
               <p className="mt-1 text-sm text-gray-500">Get started by adding your first prize.</p>
+            </div>
+          )}
+          {prizes.length > 0 && filteredPrizes.length === 0 && (
+            <div className="text-center py-8 text-sm text-gray-500">
+              No prizes match &quot;{searchTerm}&quot;.
             </div>
           )}
         </div>
